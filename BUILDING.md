@@ -1,9 +1,9 @@
 # Building
 
-Two standalone scripts, no arguments needed — each builds LAMMPS with
-Kokkos/CUDA, MPI, and the Python API against the custom MesoMem sources in
-[`cpp_files/`](cpp_files/). See [`README.md`](README.md) for what those
-sources are and why a pinned LAMMPS commit is required.
+Two standalone scripts — each builds LAMMPS with Kokkos/CUDA, MPI, and the
+Python API against the custom MesoMem sources in [`cpp_files/`](cpp_files/).
+See [`README.md`](README.md) for what those sources are and why a pinned
+LAMMPS commit is required.
 
 ```bash
 # Local machine (auto-detects your GPU architecture via nvidia-smi)
@@ -18,6 +18,17 @@ sources are and why a pinned LAMMPS commit is required.
 `compile_hpc.sh` has the module names and GPU architecture (default:
 `AMPERE80` for Snellius A100 nodes) set as plain variables near the top of
 the file — edit them if you're building on a different cluster.
+
+If `_build/<local|hpc>/lammps-src` already exists from a previous run,
+re-running either script skips the LAMMPS fetch and just does an
+incremental rebuild (the custom `cpp_files/` sources are always re-copied
+first, so local edits are picked up). Pass `--force` to wipe it and fetch
++ build from scratch:
+
+```bash
+./compile_local.sh --force
+./compile_hpc.sh --force
+```
 
 ## What each script does
 

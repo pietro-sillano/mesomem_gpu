@@ -4,14 +4,29 @@
 #
 # Fetches a pinned LAMMPS commit, drops in the custom MesoMem source files
 # from cpp_files/, and builds LAMMPS with KOKKOS (GPU/CUDA), MPI, and the
-# Python API. No arguments needed: the GPU architecture is auto-detected.
+# Python API. The GPU architecture is auto-detected.
 #
-# Usage: ./compile_local.sh
+# If ./_build/local/lammps-src already exists (from a previous run), the
+# LAMMPS fetch is skipped and re-running this script just does an
+# incremental rebuild (custom source files are always re-copied first, so
+# local edits to cpp_files/ are picked up). Pass --force to wipe it and
+# fetch + build from scratch.
+#
+# Usage: ./compile_local.sh [--force]
 #
 # Everything ends up under ./_build/local/ (source, cmake build dir,
 # install, python venv) so nothing outside that folder is touched.
 
 set -euo pipefail
+
+FORCE="no"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --force) FORCE="yes"; shift ;;
+    -h|--help) echo "Usage: $0 [--force]"; exit 0 ;;
+    *) echo "Unknown option: $1"; echo "Usage: $0 [--force]"; exit 1 ;;
+  esac
+done
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -31,6 +46,7 @@ JOBS="$(nproc)"
 
 echo "== MesoMem GPU build (local) =="
 echo "  work dir: $BUILD_ROOT"
+echo "  force:    $FORCE"
 echo
 
 # --------------------------------------------------------------------------
@@ -65,15 +81,19 @@ command -v nvcc >/dev/null 2>&1 || { echo "ERROR: nvcc not found (checked PATH a
 echo
 
 # --------------------------------------------------------------------------
-# Step 1: fetch the pinned LAMMPS source tree
+# Step 1: fetch the pinned LAMMPS source tree (skipped if already present)
 # --------------------------------------------------------------------------
-echo "-- fetching LAMMPS ($LAMMPS_REF) --"
-rm -rf "$SRC_DIR"
-mkdir -p "$SRC_DIR"
-git -C "$SRC_DIR" init -q
-git -C "$SRC_DIR" remote add origin "$LAMMPS_GIT_URL"
-git -C "$SRC_DIR" fetch --depth 1 origin "$LAMMPS_REF"
-git -C "$SRC_DIR" checkout -q FETCH_HEAD
+if [[ "$FORCE" == "no" && -d "$SRC_DIR/.git" ]]; then
+  echo "-- reusing existing LAMMPS source at $SRC_DIR (pass --force to refetch from scratch) --"
+else
+  echo "-- fetching LAMMPS ($LAMMPS_REF) --"
+  rm -rf "$SRC_DIR"
+  mkdir -p "$SRC_DIR"
+  git -C "$SRC_DIR" init -q
+  git -C "$SRC_DIR" remote add origin "$LAMMPS_GIT_URL"
+  git -C "$SRC_DIR" fetch --depth 1 origin "$LAMMPS_REF"
+  git -C "$SRC_DIR" checkout -q FETCH_HEAD
+fi
 
 # --------------------------------------------------------------------------
 # Step 2: drop in the custom MesoMem source files
