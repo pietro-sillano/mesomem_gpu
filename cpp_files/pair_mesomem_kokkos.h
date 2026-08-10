@@ -12,33 +12,33 @@
 ------------------------------------------------------------------------- */
 
 // Contributing author: Pietro Sillano (TU Delft), 2026
-// Kokkos port of pair_membrane_sillano_v2
+// Kokkos port of pair_mesomem
 
 #ifdef PAIR_CLASS
 // clang-format off
-PairStyle(membrane_sillanov2/kk,        PairMembraneSillanov2Kokkos<LMPDeviceType>);
-PairStyle(membrane_sillanov2/kk/device, PairMembraneSillanov2Kokkos<LMPDeviceType>);
-PairStyle(membrane_sillanov2/kk/host,   PairMembraneSillanov2Kokkos<LMPHostType>);
+PairStyle(mesomem/kk,        PairMesomemKokkos<LMPDeviceType>);
+PairStyle(mesomem/kk/device, PairMesomemKokkos<LMPDeviceType>);
+PairStyle(mesomem/kk/host,   PairMesomemKokkos<LMPHostType>);
 // clang-format on
 #else
 
 // clang-format off
-#ifndef LMP_PAIR_MEMBRANE_SILLANOv2_KOKKOS_H
-#define LMP_PAIR_MEMBRANE_SILLANOv2_KOKKOS_H
+#ifndef LMP_PAIR_MESOMEM_KOKKOS_H
+#define LMP_PAIR_MESOMEM_KOKKOS_H
 
 #include "pair_kokkos.h"
-#include "pair_membrane_sillano_v2.h"
+#include "pair_mesomem.h"
 #include "neigh_list_kokkos.h"
 
 namespace LAMMPS_NS {
 
-struct params_membrane {
+struct params_mesomem {
   KOKKOS_INLINE_FUNCTION
-  params_membrane()
+  params_mesomem()
       : cutsq(0.0), sigma(0.0), eps(0.0), ktilt(0.0), ksplay(0.0),
         wc(0.0), c0(0.0), zeta_int(0) {}
   KOKKOS_INLINE_FUNCTION
-  params_membrane(int /*dummy*/)
+  params_mesomem(int /*dummy*/)
       : cutsq(0.0), sigma(0.0), eps(0.0), ktilt(0.0), ksplay(0.0),
         wc(0.0), c0(0.0), zeta_int(0) {}
 
@@ -53,10 +53,10 @@ struct params_membrane {
 };
 
 template<int NEIGHFLAG, int NEWTON_PAIR, int EVFLAG, bool STACKPARAMS>
-struct TagPairMembraneV2 {};
+struct TagPairMesomem {};
 
 template<class DeviceType>
-class PairMembraneSillanov2Kokkos : public PairMembraneSillanov2 {
+class PairMesomemKokkos : public PairMesomem {
  public:
   enum { EnabledNeighFlags = FULL | HALFTHREAD | HALF };
   enum { COUL_FLAG = 0 };
@@ -64,8 +64,8 @@ class PairMembraneSillanov2Kokkos : public PairMembraneSillanov2 {
   typedef ArrayTypes<DeviceType> AT;
   typedef EV_FLOAT value_type;
 
-  PairMembraneSillanov2Kokkos(class LAMMPS *);
-  ~PairMembraneSillanov2Kokkos() override;
+  PairMesomemKokkos(class LAMMPS *);
+  ~PairMesomemKokkos() override;
 
   void compute(int, int) override;
 
@@ -74,12 +74,12 @@ class PairMembraneSillanov2Kokkos : public PairMembraneSillanov2 {
 
   template<int NEIGHFLAG, int NEWTON_PAIR, int EVFLAG, bool STACKPARAMS>
   KOKKOS_INLINE_FUNCTION
-  void operator()(TagPairMembraneV2<NEIGHFLAG,NEWTON_PAIR,EVFLAG,STACKPARAMS>,
+  void operator()(TagPairMesomem<NEIGHFLAG,NEWTON_PAIR,EVFLAG,STACKPARAMS>,
                   const int, EV_FLOAT &ev) const;
 
   template<int NEIGHFLAG, int NEWTON_PAIR, int EVFLAG, bool STACKPARAMS>
   KOKKOS_INLINE_FUNCTION
-  void operator()(TagPairMembraneV2<NEIGHFLAG,NEWTON_PAIR,EVFLAG,STACKPARAMS>,
+  void operator()(TagPairMesomem<NEIGHFLAG,NEWTON_PAIR,EVFLAG,STACKPARAMS>,
                   const int) const;
 
   template<int NEIGHFLAG, int NEWTON_PAIR>
@@ -92,11 +92,11 @@ class PairMembraneSillanov2Kokkos : public PairMembraneSillanov2 {
   int sbmask(const int& j) const;
 
  protected:
-  Kokkos::DualView<params_membrane**, Kokkos::LayoutRight, DeviceType> k_params;
-  typename Kokkos::DualView<params_membrane**,
+  Kokkos::DualView<params_mesomem**, Kokkos::LayoutRight, DeviceType> k_params;
+  typename Kokkos::DualView<params_mesomem**,
       Kokkos::LayoutRight, DeviceType>::t_dev_const_um params;
   // stack-resident params for small ntypes (fast path)
-  params_membrane m_params[MAX_TYPES_STACKPARAMS+1][MAX_TYPES_STACKPARAMS+1];
+  params_mesomem m_params[MAX_TYPES_STACKPARAMS+1][MAX_TYPES_STACKPARAMS+1];
   KK_FLOAT m_cutsq[MAX_TYPES_STACKPARAMS+1][MAX_TYPES_STACKPARAMS+1];
 
   typename AT::t_kkfloat_1d_3_lr_randomread x;
@@ -123,8 +123,8 @@ class PairMembraneSillanov2Kokkos : public PairMembraneSillanov2 {
   typename AT::t_int_1d_randomread d_numneigh;
 
   void allocate() override;
-  friend void pair_virial_fdotr_compute<PairMembraneSillanov2Kokkos>(
-      PairMembraneSillanov2Kokkos*);
+  friend void pair_virial_fdotr_compute<PairMesomemKokkos>(
+      PairMesomemKokkos*);
 };
 
 }

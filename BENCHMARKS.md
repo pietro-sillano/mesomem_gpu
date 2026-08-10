@@ -210,7 +210,7 @@ lmp -in simulation.lmp \
 | `-sf kk` | Kokkos suffix | Automatically maps all styles to their `kk` variants |
 | `newton on` | Newton's 3rd law | Reduces force evaluations by ~2x; works with `neigh half` |
 | `neigh half` | Half neighbour list | Combined with `newton on` this is always the best option |
-| `comm device` | On-device halo | Avoids PCIe round-trips; requires the monolithic `dipole_sphere_angle` atom style (no hybrid) |
+| `comm device` | On-device halo | Avoids PCIe round-trips; requires the monolithic `mesomem` atom style (no hybrid) |
 
 ### Half vs full neighbour list
 
@@ -321,7 +321,7 @@ This forces a CPU-GPU sync at each timer boundary. Use only for profiling
 
 Dump trajectories are automatically recognized. For the polymer/solvent
 data files, pick the LAMMPS "hybrid angle sphere dipole" atom style when
-prompted (the `dipole_sphere_angle` atom style isn't natively known to
+prompted (the `mesomem` atom style isn't natively known to
 OVITO).
 
 ## Kokkos resources

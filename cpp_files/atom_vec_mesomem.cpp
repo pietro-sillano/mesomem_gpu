@@ -11,7 +11,7 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#include "atom_vec_dipole_sphere_angle.h"
+#include "atom_vec_mesomem.h"
 
 #include "atom.h"
 #include "domain.h"
@@ -27,7 +27,7 @@ using namespace MathConst;
 
 /* ---------------------------------------------------------------------- */
 
-AtomVecDipoleSphereAngle::AtomVecDipoleSphereAngle(LAMMPS *lmp) : AtomVec(lmp)
+AtomVecMesomem::AtomVecMesomem(LAMMPS *lmp) : AtomVec(lmp)
 {
   mass_type = PER_ATOM;
   molecular = Atom::MOLECULAR;
@@ -76,7 +76,7 @@ AtomVecDipoleSphereAngle::AtomVecDipoleSphereAngle(LAMMPS *lmp) : AtomVec(lmp)
 
 /* ---------------------------------------------------------------------- */
 
-AtomVecDipoleSphereAngle::~AtomVecDipoleSphereAngle()
+AtomVecMesomem::~AtomVecMesomem()
 {
   delete[] bond_negative;
   delete[] angle_negative;
@@ -85,7 +85,7 @@ AtomVecDipoleSphereAngle::~AtomVecDipoleSphereAngle()
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecDipoleSphereAngle::grow_pointers()
+void AtomVecMesomem::grow_pointers()
 {
   // dipole_sphere raw pointers
   mu     = atom->mu;
@@ -103,7 +103,7 @@ void AtomVecDipoleSphereAngle::grow_pointers()
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecDipoleSphereAngle::create_atom_post(int ilocal)
+void AtomVecMesomem::create_atom_post(int ilocal)
 {
   radius[ilocal] = 0.5;
   rmass[ilocal]  = 4.0 * MY_PI / 3.0 * 0.5 * 0.5 * 0.5;
@@ -114,7 +114,7 @@ void AtomVecDipoleSphereAngle::create_atom_post(int ilocal)
                    + zero molecular topology
 ------------------------------------------------------------------------- */
 
-void AtomVecDipoleSphereAngle::data_atom_post(int ilocal)
+void AtomVecMesomem::data_atom_post(int ilocal)
 {
   // sphere: input is diameter stored in radius, input is density stored in rmass
   radius_one = 0.5 * atom->radius[ilocal];
@@ -139,7 +139,7 @@ void AtomVecDipoleSphereAngle::data_atom_post(int ilocal)
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecDipoleSphereAngle::pack_data_pre(int ilocal)
+void AtomVecMesomem::pack_data_pre(int ilocal)
 {
   radius_one = radius[ilocal];
   rmass_one  = rmass[ilocal];
@@ -151,7 +151,7 @@ void AtomVecDipoleSphereAngle::pack_data_pre(int ilocal)
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecDipoleSphereAngle::pack_data_post(int ilocal)
+void AtomVecMesomem::pack_data_post(int ilocal)
 {
   radius[ilocal] = radius_one;
   rmass[ilocal]  = rmass_one;
@@ -159,7 +159,7 @@ void AtomVecDipoleSphereAngle::pack_data_post(int ilocal)
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecDipoleSphereAngle::pack_restart_pre(int ilocal)
+void AtomVecMesomem::pack_restart_pre(int ilocal)
 {
   if (bond_per_atom < atom->bond_per_atom) {
     delete[] bond_negative;
@@ -195,7 +195,7 @@ void AtomVecDipoleSphereAngle::pack_restart_pre(int ilocal)
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecDipoleSphereAngle::pack_restart_post(int ilocal)
+void AtomVecMesomem::pack_restart_post(int ilocal)
 {
   if (any_bond_negative)
     for (int m = 0; m < num_bond[ilocal]; m++)
@@ -208,14 +208,14 @@ void AtomVecDipoleSphereAngle::pack_restart_post(int ilocal)
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecDipoleSphereAngle::unpack_restart_init(int ilocal)
+void AtomVecMesomem::unpack_restart_init(int ilocal)
 {
   nspecial[ilocal][0] = nspecial[ilocal][1] = nspecial[ilocal][2] = 0;
 }
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecDipoleSphereAngle::read_data_general_to_restricted(int nlocal_previous, int nlocal)
+void AtomVecMesomem::read_data_general_to_restricted(int nlocal_previous, int nlocal)
 {
   AtomVec::read_data_general_to_restricted(nlocal_previous, nlocal);
 
@@ -225,7 +225,7 @@ void AtomVecDipoleSphereAngle::read_data_general_to_restricted(int nlocal_previo
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecDipoleSphereAngle::write_data_restricted_to_general()
+void AtomVecMesomem::write_data_restricted_to_general()
 {
   AtomVec::write_data_restricted_to_general();
 
@@ -239,7 +239,7 @@ void AtomVecDipoleSphereAngle::write_data_restricted_to_general()
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecDipoleSphereAngle::write_data_restore_restricted()
+void AtomVecMesomem::write_data_restore_restricted()
 {
   AtomVec::write_data_restore_restricted();
 

@@ -15,22 +15,22 @@
 
 #ifdef PAIR_CLASS
 // clang-format off
-PairStyle(membrane_sillanov2,PairMembraneSillanov2);
+PairStyle(mesomem,PairMesomem);
 // clang-format on
 
 #else
 
-#ifndef LMP_PAIR_MEMBRANE_SILLANOv2_H
-#define LMP_PAIR_MEMBRANE_SILLANOv2_H
+#ifndef LMP_PAIR_MESOMEM_H
+#define LMP_PAIR_MESOMEM_H
 
 #include "pair.h"
 
 namespace LAMMPS_NS {
 
-class PairMembraneSillanov2 : public Pair {
+class PairMesomem : public Pair {
  public:
-  PairMembraneSillanov2(LAMMPS *lmp);
-  ~PairMembraneSillanov2() override;
+  PairMesomem(LAMMPS *lmp);
+  ~PairMesomem() override;
   void compute(int, int) override;
   void settings(int, char **) override;
   void coeff(int, char **) override;

@@ -17,10 +17,10 @@ you're modifying the physics or porting it to a new LAMMPS version:
 
 | File(s) | What it is | LAMMPS package/location |
 |---|---|---|
-| `pair_membrane_sillano_v2.{cpp,h}` | CPU reference pair style (`pair_style membrane_sillanov2`) | `src/` (core) |
-| `pair_membrane_sillano_v2_kokkos.{cpp,h}` | GPU pair style (`pair_style membrane_sillanov2/kk`) | `src/KOKKOS/` |
-| `atom_vec_dipole_sphere_angle.{cpp,h}` | CPU atom style (`atom_style dipole_sphere_angle`) — merges charge, dipole, sphere radius/mass, bonds, angles into one contiguous layout | `src/DIPOLE/` |
-| `atom_vec_dipole_sphere_angle_kokkos.{cpp,h}` | GPU atom style (`atom_style dipole_sphere_angle/kk`) | `src/KOKKOS/` |
+| `pair_mesomem.{cpp,h}` | CPU reference pair style (`pair_style mesomem`) | `src/` (core) |
+| `pair_mesomem_kokkos.{cpp,h}` | GPU pair style (`pair_style mesomem/kk`) | `src/KOKKOS/` |
+| `atom_vec_mesomem.{cpp,h}` | CPU atom style (`atom_style mesomem`) — merges charge, dipole, sphere radius/mass, bonds, angles into one contiguous layout | `src/DIPOLE/` |
+| `atom_vec_mesomem_kokkos.{cpp,h}` | GPU atom style (`atom_style mesomem/kk`) | `src/KOKKOS/` |
 | `fix_langevin_kokkos.cpp` | Patched Kokkos Langevin thermostat (overwrites the stock LAMMPS file) | `src/KOKKOS/` |
 
 `compile_local.sh`/`compile_hpc.sh` (see [`BUILDING.md`](BUILDING.md))
@@ -32,7 +32,7 @@ per-package glob picks them up automatically.
 
 Standard LAMMPS `hybrid` atom styles disable `comm device` (on-GPU halo
 exchange) because the data layout isn't guaranteed contiguous across the
-combined properties. `dipole_sphere_angle` stores charge, dipole, sphere
+combined properties. `mesomem` stores charge, dipole, sphere
 radius/mass, bonds, and angles in one contiguous Kokkos view, enabling:
 
 - `comm device` (halo exchange entirely on GPU)
@@ -41,7 +41,7 @@ radius/mass, bonds, and angles in one contiguous Kokkos view, enabling:
 
 #### Data file column order
 
-The `Atoms` section for `dipole_sphere_angle` uses a layout different from
+The `Atoms` section for `mesomem` uses a layout different from
 plain `dipole_sphere`:
 
 ```
@@ -65,7 +65,7 @@ This repo does **not** ship a full LAMMPS source tree — the build scripts
 fetch a pinned upstream LAMMPS commit (git SHA hardcoded in the scripts)
 instead of the `lammps-stable` release. The Kokkos atom-style API
 (`AtomVecKokkos::sync`/`modified`/`sync_pinned`) changed after the last
-stable LAMMPS release, so building `atom_vec_dipole_sphere_angle_kokkos`
+stable LAMMPS release, so building `atom_vec_mesomem_kokkos`
 against `lammps-stable.tar.gz` fails to compile. The scripts `git fetch
 --depth 1` a specific known-good `develop`-branch commit instead, so the
 checked-in content stays small while always building against the exact

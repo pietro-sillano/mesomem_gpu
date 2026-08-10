@@ -9,7 +9,7 @@
 #   out_file  full output path (e.g. input/vesicle_ds_N5120_r18.4_d0.40.data)
 
 units      lj
-atom_style dipole_sphere_angle
+atom_style mesomem
 neighbor   1.0 bin
 neigh_modify delay 0 every 1 check yes binsize 2.5
 boundary   p p p
@@ -36,8 +36,8 @@ set type 2 density ${wat_density}
 set type 2 dipole 0.0 0.0 1.0
 
 # pair style for minimization (matches solvent.lmp)
-pair_style hybrid membrane_sillanov2 2.5 lj/cut 1.12
-pair_coeff 1 1 membrane_sillanov2 1.0 1.0 15.0 1.0 2.5 2.0 5 0.0
+pair_style hybrid mesomem 2.5 lj/cut 1.12
+pair_coeff 1 1 mesomem 1.0 1.0 15.0 1.0 2.5 2.0 5 0.0
 pair_coeff 2 2 lj/cut 1.0 1.0 1.12
 pair_coeff 1 2 lj/cut 1.0 1.0 1.12
 

@@ -18,10 +18,10 @@
 
    This file intentionally contains NO pack/unpack overrides — those are
    handled entirely by the base class AtomVecKokkos using the field registry
-   that AtomVecDipoleSphereAngle sets up in its constructor.
+   that AtomVecMesomem sets up in its constructor.
 */
 
-#include "atom_vec_dipole_sphere_angle_kokkos.h"
+#include "atom_vec_mesomem_kokkos.h"
 
 #include "atom_kokkos.h"
 #include "atom_masks.h"
@@ -35,8 +35,8 @@ using namespace LAMMPS_NS;
 
 /* ---------------------------------------------------------------------- */
 
-AtomVecDipoleSphereAngleKokkos::AtomVecDipoleSphereAngleKokkos(LAMMPS *lmp)
-    : AtomVec(lmp), AtomVecKokkos(lmp), AtomVecDipoleSphereAngle(lmp),
+AtomVecMesomemKokkos::AtomVecMesomemKokkos(LAMMPS *lmp)
+    : AtomVec(lmp), AtomVecKokkos(lmp), AtomVecMesomem(lmp),
       q(nullptr), torque(nullptr), molecule(nullptr),
       bond_atom(nullptr), angle_atom1(nullptr), angle_atom2(nullptr),
       angle_atom3(nullptr), special(nullptr)
@@ -47,9 +47,9 @@ AtomVecDipoleSphereAngleKokkos::AtomVecDipoleSphereAngleKokkos(LAMMPS *lmp)
    process field strings to initialize data structs for all other methods
 ------------------------------------------------------------------------- */
 
-void AtomVecDipoleSphereAngleKokkos::init()
+void AtomVecMesomemKokkos::init()
 {
-  AtomVecDipoleSphereAngle::init();
+  AtomVecMesomem::init();
 
   set_atom_masks();
 }
@@ -60,7 +60,7 @@ void AtomVecDipoleSphereAngleKokkos::init()
    n > 0 allocates arrays to size n
 ------------------------------------------------------------------------- */
 
-void AtomVecDipoleSphereAngleKokkos::grow(int n)
+void AtomVecMesomemKokkos::grow(int n)
 {
   auto DELTA = LMP_KOKKOS_AV_DELTA;
   int step = MAX(DELTA, nmax*0.01);
@@ -124,7 +124,7 @@ void AtomVecDipoleSphereAngleKokkos::grow(int n)
    reset local array ptrs
 ------------------------------------------------------------------------- */
 
-void AtomVecDipoleSphereAngleKokkos::grow_pointers()
+void AtomVecMesomemKokkos::grow_pointers()
 {
   // base fields
   tag = atomKK->tag;
@@ -216,7 +216,7 @@ void AtomVecDipoleSphereAngleKokkos::grow_pointers()
    sort atom arrays on device
 ------------------------------------------------------------------------- */
 
-void AtomVecDipoleSphereAngleKokkos::sort_kokkos(Kokkos::BinSort<KeyViewType, BinOp> &Sorter)
+void AtomVecMesomemKokkos::sort_kokkos(Kokkos::BinSort<KeyViewType, BinOp> &Sorter)
 {
   atomKK->sync(Device, ALL_MASK & ~F_MASK & ~TORQUE_MASK);
 
@@ -254,7 +254,7 @@ void AtomVecDipoleSphereAngleKokkos::sort_kokkos(Kokkos::BinSort<KeyViewType, Bi
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecDipoleSphereAngleKokkos::sync(ExecutionSpace space, uint64_t mask)
+void AtomVecMesomemKokkos::sync(ExecutionSpace space, uint64_t mask)
 {
   if (space == Device) {
     if (mask & X_MASK)      atomKK->k_x.sync_device();
@@ -354,7 +354,7 @@ void AtomVecDipoleSphereAngleKokkos::sync(ExecutionSpace space, uint64_t mask)
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecDipoleSphereAngleKokkos::modified(ExecutionSpace space, uint64_t mask)
+void AtomVecMesomemKokkos::modified(ExecutionSpace space, uint64_t mask)
 {
   if (space == Device) {
     if (mask & X_MASK)      atomKK->k_x.modify_device();
@@ -454,7 +454,7 @@ void AtomVecDipoleSphereAngleKokkos::modified(ExecutionSpace space, uint64_t mas
 
 /* ---------------------------------------------------------------------- */
 
-void AtomVecDipoleSphereAngleKokkos::sync_pinned(ExecutionSpace space, uint64_t mask,
+void AtomVecMesomemKokkos::sync_pinned(ExecutionSpace space, uint64_t mask,
                                                   int async_flag)
 {
   if (space == Device) {

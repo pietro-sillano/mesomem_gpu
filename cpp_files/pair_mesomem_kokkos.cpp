@@ -13,14 +13,14 @@
 ------------------------------------------------------------------------- */
 
 // Contributing author: Pietro Sillano (TU Delft), 2026
-// Kokkos port of pair_membrane_sillano_v2
+// Kokkos port of pair_mesomem
 // Structurally modeled on pair_lj_cut_dipole_cut_kokkos.
 
 
 
 #define INCLUDE_RADIAL
 
-#include "pair_membrane_sillano_v2_kokkos.h"
+#include "pair_mesomem_kokkos.h"
 
 #include "atom_kokkos.h"
 #include "atom_masks.h"
@@ -43,8 +43,8 @@ using MathConst::MY_PI;
 /* ---------------------------------------------------------------------- */
 
 template<class DeviceType>
-PairMembraneSillanov2Kokkos<DeviceType>::PairMembraneSillanov2Kokkos(LAMMPS *lmp) :
-    PairMembraneSillanov2(lmp)
+PairMesomemKokkos<DeviceType>::PairMesomemKokkos(LAMMPS *lmp) :
+    PairMesomem(lmp)
 {
   respa_enable = 0;
 
@@ -59,7 +59,7 @@ PairMembraneSillanov2Kokkos<DeviceType>::PairMembraneSillanov2Kokkos(LAMMPS *lmp
 /* ---------------------------------------------------------------------- */
 
 template<class DeviceType>
-PairMembraneSillanov2Kokkos<DeviceType>::~PairMembraneSillanov2Kokkos()
+PairMesomemKokkos<DeviceType>::~PairMesomemKokkos()
 {
   if (copymode) return;
 
@@ -73,7 +73,7 @@ PairMembraneSillanov2Kokkos<DeviceType>::~PairMembraneSillanov2Kokkos()
 /* ---------------------------------------------------------------------- */
 
 template<class DeviceType>
-void PairMembraneSillanov2Kokkos<DeviceType>::compute(int eflag_in, int vflag_in)
+void PairMesomemKokkos<DeviceType>::compute(int eflag_in, int vflag_in)
 {
   eflag = eflag_in;
   vflag = vflag_in;
@@ -127,47 +127,47 @@ void PairMembraneSillanov2Kokkos<DeviceType>::compute(int eflag_in, int vflag_in
   if (evflag) {                                                                          \
     if (neighflag == HALF) {                                                             \
       if (newton_pair) Kokkos::parallel_reduce(                                          \
-          Kokkos::RangePolicy<DeviceType, TagPairMembraneV2<HALF,1,1,STACK>>(0,inum),    \
+          Kokkos::RangePolicy<DeviceType, TagPairMesomem<HALF,1,1,STACK>>(0,inum),    \
           *this, ev);                                                                    \
       else             Kokkos::parallel_reduce(                                          \
-          Kokkos::RangePolicy<DeviceType, TagPairMembraneV2<HALF,0,1,STACK>>(0,inum),    \
+          Kokkos::RangePolicy<DeviceType, TagPairMesomem<HALF,0,1,STACK>>(0,inum),    \
           *this, ev);                                                                    \
     } else if (neighflag == HALFTHREAD) {                                                \
       if (newton_pair) Kokkos::parallel_reduce(                                          \
-          Kokkos::RangePolicy<DeviceType, TagPairMembraneV2<HALFTHREAD,1,1,STACK>>(0,inum),\
+          Kokkos::RangePolicy<DeviceType, TagPairMesomem<HALFTHREAD,1,1,STACK>>(0,inum),\
           *this, ev);                                                                    \
       else             Kokkos::parallel_reduce(                                          \
-          Kokkos::RangePolicy<DeviceType, TagPairMembraneV2<HALFTHREAD,0,1,STACK>>(0,inum),\
+          Kokkos::RangePolicy<DeviceType, TagPairMesomem<HALFTHREAD,0,1,STACK>>(0,inum),\
           *this, ev);                                                                    \
     } else {                                                                             \
       if (newton_pair) Kokkos::parallel_reduce(                                          \
-          Kokkos::RangePolicy<DeviceType, TagPairMembraneV2<FULL,1,1,STACK>>(0,inum),    \
+          Kokkos::RangePolicy<DeviceType, TagPairMesomem<FULL,1,1,STACK>>(0,inum),    \
           *this, ev);                                                                    \
       else             Kokkos::parallel_reduce(                                          \
-          Kokkos::RangePolicy<DeviceType, TagPairMembraneV2<FULL,0,1,STACK>>(0,inum),    \
+          Kokkos::RangePolicy<DeviceType, TagPairMesomem<FULL,0,1,STACK>>(0,inum),    \
           *this, ev);                                                                    \
     }                                                                                    \
   } else {                                                                               \
     if (neighflag == HALF) {                                                             \
       if (newton_pair) Kokkos::parallel_for(                                             \
-          Kokkos::RangePolicy<DeviceType, TagPairMembraneV2<HALF,1,0,STACK>>(0,inum),    \
+          Kokkos::RangePolicy<DeviceType, TagPairMesomem<HALF,1,0,STACK>>(0,inum),    \
           *this);                                                                        \
       else             Kokkos::parallel_for(                                             \
-          Kokkos::RangePolicy<DeviceType, TagPairMembraneV2<HALF,0,0,STACK>>(0,inum),    \
+          Kokkos::RangePolicy<DeviceType, TagPairMesomem<HALF,0,0,STACK>>(0,inum),    \
           *this);                                                                        \
     } else if (neighflag == HALFTHREAD) {                                                \
       if (newton_pair) Kokkos::parallel_for(                                             \
-          Kokkos::RangePolicy<DeviceType, TagPairMembraneV2<HALFTHREAD,1,0,STACK>>(0,inum),\
+          Kokkos::RangePolicy<DeviceType, TagPairMesomem<HALFTHREAD,1,0,STACK>>(0,inum),\
           *this);                                                                        \
       else             Kokkos::parallel_for(                                             \
-          Kokkos::RangePolicy<DeviceType, TagPairMembraneV2<HALFTHREAD,0,0,STACK>>(0,inum),\
+          Kokkos::RangePolicy<DeviceType, TagPairMesomem<HALFTHREAD,0,0,STACK>>(0,inum),\
           *this);                                                                        \
     } else {                                                                             \
       if (newton_pair) Kokkos::parallel_for(                                             \
-          Kokkos::RangePolicy<DeviceType, TagPairMembraneV2<FULL,1,0,STACK>>(0,inum),    \
+          Kokkos::RangePolicy<DeviceType, TagPairMesomem<FULL,1,0,STACK>>(0,inum),    \
           *this);                                                                        \
       else             Kokkos::parallel_for(                                             \
-          Kokkos::RangePolicy<DeviceType, TagPairMembraneV2<FULL,0,0,STACK>>(0,inum),    \
+          Kokkos::RangePolicy<DeviceType, TagPairMesomem<FULL,0,0,STACK>>(0,inum),    \
           *this);                                                                        \
     }                                                                                    \
   }
@@ -207,8 +207,8 @@ void PairMembraneSillanov2Kokkos<DeviceType>::compute(int eflag_in, int vflag_in
 template<class DeviceType>
 template<int NEIGHFLAG, int NEWTON_PAIR, int EVFLAG, bool STACKPARAMS>
 KOKKOS_INLINE_FUNCTION
-void PairMembraneSillanov2Kokkos<DeviceType>::operator()(
-    TagPairMembraneV2<NEIGHFLAG,NEWTON_PAIR,EVFLAG,STACKPARAMS>,
+void PairMesomemKokkos<DeviceType>::operator()(
+    TagPairMesomem<NEIGHFLAG,NEWTON_PAIR,EVFLAG,STACKPARAMS>,
     const int ii, EV_FLOAT &ev) const
 {
   // atomic views for NEIGHFLAG != FULL
@@ -250,7 +250,7 @@ void PairMembraneSillanov2Kokkos<DeviceType>::operator()(
     const KK_FLOAT cutsq_ij = STACKPARAMS ? m_cutsq[itype][jtype] : d_cutsq(itype,jtype);
     if (rsq >= cutsq_ij) continue;
 
-    const params_membrane &p = STACKPARAMS ? m_params[itype][jtype] : params(itype,jtype);
+    const params_mesomem &p = STACKPARAMS ? m_params[itype][jtype] : params(itype,jtype);
 
     const KK_FLOAT r     = sqrt(rsq);
     const KK_FLOAT inv_r = 1.0 / r;
@@ -452,13 +452,13 @@ void PairMembraneSillanov2Kokkos<DeviceType>::operator()(
 template<class DeviceType>
 template<int NEIGHFLAG, int NEWTON_PAIR, int EVFLAG, bool STACKPARAMS>
 KOKKOS_INLINE_FUNCTION
-void PairMembraneSillanov2Kokkos<DeviceType>::operator()(
-    TagPairMembraneV2<NEIGHFLAG,NEWTON_PAIR,EVFLAG,STACKPARAMS>,
+void PairMesomemKokkos<DeviceType>::operator()(
+    TagPairMesomem<NEIGHFLAG,NEWTON_PAIR,EVFLAG,STACKPARAMS>,
     const int ii) const
 {
   EV_FLOAT ev;
   this->template operator()<NEIGHFLAG,NEWTON_PAIR,EVFLAG,STACKPARAMS>(
-      TagPairMembraneV2<NEIGHFLAG,NEWTON_PAIR,EVFLAG,STACKPARAMS>(), ii, ev);
+      TagPairMesomem<NEIGHFLAG,NEWTON_PAIR,EVFLAG,STACKPARAMS>(), ii, ev);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -466,7 +466,7 @@ void PairMembraneSillanov2Kokkos<DeviceType>::operator()(
 template<class DeviceType>
 template<int NEIGHFLAG, int NEWTON_PAIR>
 KOKKOS_INLINE_FUNCTION
-void PairMembraneSillanov2Kokkos<DeviceType>::ev_tally_xyz(
+void PairMesomemKokkos<DeviceType>::ev_tally_xyz(
     EV_FLOAT &ev, int i, int j, const KK_FLOAT &epair,
     KK_FLOAT fx, KK_FLOAT fy, KK_FLOAT fz,
     KK_FLOAT delx, KK_FLOAT dely, KK_FLOAT delz) const
@@ -531,26 +531,26 @@ void PairMembraneSillanov2Kokkos<DeviceType>::ev_tally_xyz(
 /* ---------------------------------------------------------------------- */
 
 template<class DeviceType>
-void PairMembraneSillanov2Kokkos<DeviceType>::allocate()
+void PairMesomemKokkos<DeviceType>::allocate()
 {
-  PairMembraneSillanov2::allocate();
+  PairMesomem::allocate();
 
   int n = atom->ntypes;
   memory->destroy(cutsq);
   memoryKK->create_kokkos(k_cutsq, cutsq, n+1, n+1, "pair:cutsq");
   d_cutsq = k_cutsq.template view<DeviceType>();
 
-  k_params = Kokkos::DualView<params_membrane**, Kokkos::LayoutRight, DeviceType>(
-      "PairMembraneSillanov2::params", n+1, n+1);
+  k_params = Kokkos::DualView<params_mesomem**, Kokkos::LayoutRight, DeviceType>(
+      "PairMesomem::params", n+1, n+1);
   params = k_params.template view<DeviceType>();
 }
 
 /* ---------------------------------------------------------------------- */
 
 template<class DeviceType>
-void PairMembraneSillanov2Kokkos<DeviceType>::init_style()
+void PairMesomemKokkos<DeviceType>::init_style()
 {
-  PairMembraneSillanov2::init_style();
+  PairMesomem::init_style();
 
   if (update->whichflag == 1 && utils::strmatch(update->integrate_style, "^respa")) {
     int respa = 0;
@@ -571,19 +571,19 @@ void PairMembraneSillanov2Kokkos<DeviceType>::init_style()
 /* ---------------------------------------------------------------------- */
 
 template<class DeviceType>
-double PairMembraneSillanov2Kokkos<DeviceType>::init_one(int i, int j)
+double PairMesomemKokkos<DeviceType>::init_one(int i, int j)
 {
-  double cutone = PairMembraneSillanov2::init_one(i, j);
+  double cutone = PairMesomem::init_one(i, j);
 
   // zeta must be a positive integer for the device kernel; warn & round.
   double zeta_ij = zeta[i][j];
   int    zeta_int = (int) std::round(zeta_ij);
   if (std::fabs(zeta_ij - (double)zeta_int) > 1e-12) {
     error->warning(FLERR,
-        "membrane_sillanov2/kk assumes integer zeta; rounding input to nearest int");
+        "mesomem/kk assumes integer zeta; rounding input to nearest int");
   }
   if (zeta_int < 1) {
-    error->all(FLERR, "membrane_sillanov2/kk requires zeta >= 1");
+    error->all(FLERR, "mesomem/kk requires zeta >= 1");
   }
 
   k_params.view_host()(i,j).cutsq    = cutone * cutone;
@@ -612,7 +612,7 @@ double PairMembraneSillanov2Kokkos<DeviceType>::init_one(int i, int j)
 
 template<class DeviceType>
 KOKKOS_INLINE_FUNCTION
-int PairMembraneSillanov2Kokkos<DeviceType>::sbmask(const int &j) const
+int PairMesomemKokkos<DeviceType>::sbmask(const int &j) const
 {
   return j >> SBBITS & 3;
 }
@@ -620,8 +620,8 @@ int PairMembraneSillanov2Kokkos<DeviceType>::sbmask(const int &j) const
 /* ---------------------------------------------------------------------- */
 
 namespace LAMMPS_NS {
-template class PairMembraneSillanov2Kokkos<LMPDeviceType>;
+template class PairMesomemKokkos<LMPDeviceType>;
 #ifdef LMP_KOKKOS_GPU
-template class PairMembraneSillanov2Kokkos<LMPHostType>;
+template class PairMesomemKokkos<LMPHostType>;
 #endif
 }

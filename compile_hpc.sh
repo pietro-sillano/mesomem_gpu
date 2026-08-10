@@ -84,18 +84,18 @@ git -C "$SRC_DIR" checkout -q FETCH_HEAD
 # picks them up.
 # --------------------------------------------------------------------------
 echo "-- installing MesoMem custom source files --"
-cp "$SCRIPT_DIR"/cpp_files/pair_membrane_sillano_v2.cpp \
-   "$SCRIPT_DIR"/cpp_files/pair_membrane_sillano_v2.h \
+cp "$SCRIPT_DIR"/cpp_files/pair_mesomem.cpp \
+   "$SCRIPT_DIR"/cpp_files/pair_mesomem.h \
    "$SRC_DIR/src/"
 
-cp "$SCRIPT_DIR"/cpp_files/atom_vec_dipole_sphere_angle.cpp \
-   "$SCRIPT_DIR"/cpp_files/atom_vec_dipole_sphere_angle.h \
+cp "$SCRIPT_DIR"/cpp_files/atom_vec_mesomem.cpp \
+   "$SCRIPT_DIR"/cpp_files/atom_vec_mesomem.h \
    "$SRC_DIR/src/DIPOLE/"
 
-cp "$SCRIPT_DIR"/cpp_files/atom_vec_dipole_sphere_angle_kokkos.cpp \
-   "$SCRIPT_DIR"/cpp_files/atom_vec_dipole_sphere_angle_kokkos.h \
-   "$SCRIPT_DIR"/cpp_files/pair_membrane_sillano_v2_kokkos.cpp \
-   "$SCRIPT_DIR"/cpp_files/pair_membrane_sillano_v2_kokkos.h \
+cp "$SCRIPT_DIR"/cpp_files/atom_vec_mesomem_kokkos.cpp \
+   "$SCRIPT_DIR"/cpp_files/atom_vec_mesomem_kokkos.h \
+   "$SCRIPT_DIR"/cpp_files/pair_mesomem_kokkos.cpp \
+   "$SCRIPT_DIR"/cpp_files/pair_mesomem_kokkos.h \
    "$SCRIPT_DIR"/cpp_files/fix_langevin_kokkos.cpp \
    "$SRC_DIR/src/KOKKOS/"
 
@@ -179,8 +179,8 @@ python3 -c "
 from lammps import lammps
 lmp = lammps()
 lmp.command('units lj')
-lmp.command('atom_style dipole_sphere_angle')
-lmp.command('pair_style membrane_sillanov2 2.5')
+lmp.command('atom_style mesomem')
+lmp.command('pair_style mesomem 2.5')
 print('OK: mesomem atom_style + pair_style loaded through the Python API')
 "
 

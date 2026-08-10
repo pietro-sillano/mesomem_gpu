@@ -28,7 +28,7 @@
 
 #define INCLUDE_RADIAL
 
-#include "pair_membrane_sillano_v2.h"
+#include "pair_mesomem.h"
 #include <cmath>
 #include <cstring>
 #include "atom.h"
@@ -48,7 +48,7 @@ using namespace LAMMPS_NS;
 
 /* ---------------------------------------------------------------------- */
 
-PairMembraneSillanov2::PairMembraneSillanov2(LAMMPS *lmp) : Pair(lmp), eps(nullptr), sigma(nullptr), cut(nullptr)
+PairMesomem::PairMesomem(LAMMPS *lmp) : Pair(lmp), eps(nullptr), sigma(nullptr), cut(nullptr)
 
 {
   writedata = 1;
@@ -57,7 +57,7 @@ PairMembraneSillanov2::PairMembraneSillanov2(LAMMPS *lmp) : Pair(lmp), eps(nullp
 
 /* ---------------------------------------------------------------------- */
 
-PairMembraneSillanov2::~PairMembraneSillanov2()
+PairMesomem::~PairMesomem()
 {
   if (copymode) return;
   if (allocated) {
@@ -78,7 +78,7 @@ PairMembraneSillanov2::~PairMembraneSillanov2()
 
 /* ---------------------------------------------------------------------- */
 
-void PairMembraneSillanov2::allocate()
+void PairMesomem::allocate()
 {
   allocated = 1;
   int np1 = atom->ntypes + 1;
@@ -101,7 +101,7 @@ void PairMembraneSillanov2::allocate()
 
 /* ---------------------------------------------------------------------- */
 
-void PairMembraneSillanov2::settings(int narg, char **arg)
+void PairMesomem::settings(int narg, char **arg)
 {
   if (narg != 1) error->all(FLERR, "Illegal pair_style command");
   cut_global = utils::numeric(FLERR, arg[0], false, lmp);
@@ -126,7 +126,7 @@ void PairMembraneSillanov2::settings(int narg, char **arg)
    Args: sigma, eps, ktilt, ksplay, cut, weight_rcut, zeta
 ------------------------------------------------------------------------- */
 
-void PairMembraneSillanov2::coeff(int narg, char **arg)
+void PairMesomem::coeff(int narg, char **arg)
 {
   if (narg != 10) error->all(FLERR, "Incorrect args for pair coefficients");
   if (!allocated) allocate();
@@ -172,25 +172,25 @@ void PairMembraneSillanov2::coeff(int narg, char **arg)
 
 /* ---------------------------------------------------------------------- */
 
-void PairMembraneSillanov2::init_style()
+void PairMesomem::init_style()
 {
   // Requirement: atoms must have orientation (mu) and torque
   if (!atom->q_flag || !atom->mu_flag || !atom->torque_flag)
-    error->all(FLERR, "Pair membrane_sillano requires atom attributes q, mu, torque");
+    error->all(FLERR, "Pair mesomem requires atom attributes q, mu, torque");
 
   neighbor->request(this, instance_me);
 }
 
 /* ---------------------------------------------------------------------- */
 
-double PairMembraneSillanov2::init_one(int i, int j)
+double PairMesomem::init_one(int i, int j)
 {
   // Strict Manual Mixing:
   // If the user did not set coefficients for this pair, we error out.
   // Automatic mixing for ktilt/ksplay/zeta is not physically defined here.
 
   if (setflag[i][j] == 0) {
-    error->all(FLERR, "All pair coeffs must be set manually for pair_style membrane_sillano");
+    error->all(FLERR, "All pair coeffs must be set manually for pair_style mesomem");
   }
 
   eps[j][i] = eps[i][j];
@@ -207,7 +207,7 @@ double PairMembraneSillanov2::init_one(int i, int j)
 
 /* ---------------------------------------------------------------------- */
 
-void PairMembraneSillanov2::compute(int eflag, int vflag)
+void PairMesomem::compute(int eflag, int vflag)
 {
   int i, j, ii, jj, inum, jnum, itype, jtype;
   double xtmp, ytmp, ztmp, delx, dely, delz, evdwl, rsq, r, inv_r;
@@ -508,7 +508,7 @@ void PairMembraneSillanov2::compute(int eflag, int vflag)
 
 
 
-// double PairMembraneSillanov2::single(int /*i*/, int /*j*/, int itype, int jtype, double rsq, double /*factor_coul*/, double factor_lj, double &fforce)
+// double PairMesomem::single(int /*i*/, int /*j*/, int itype, int jtype, double rsq, double /*factor_coul*/, double factor_lj, double &fforce)
 // {
 //   double r, dr, aexp, bexp;
 
@@ -526,7 +526,7 @@ void PairMembraneSillanov2::compute(int eflag, int vflag)
    proc 0 writes to restart file
 ------------------------------------------------------------------------- */
 
-void PairMembraneSillanov2::write_restart(FILE *fp)
+void PairMesomem::write_restart(FILE *fp)
 {
   write_restart_settings(fp);
 
@@ -552,7 +552,7 @@ void PairMembraneSillanov2::write_restart(FILE *fp)
    proc 0 reads from restart file, bcasts
 ------------------------------------------------------------------------- */
 
-void PairMembraneSillanov2::read_restart(FILE *fp)
+void PairMesomem::read_restart(FILE *fp)
 {
   read_restart_settings(fp);
   allocate();
@@ -592,7 +592,7 @@ void PairMembraneSillanov2::read_restart(FILE *fp)
    proc 0 writes to restart file
 ------------------------------------------------------------------------- */
 
-void PairMembraneSillanov2::write_restart_settings(FILE *fp)
+void PairMesomem::write_restart_settings(FILE *fp)
 {
   fwrite(&cut_global, sizeof(double), 1, fp);
   fwrite(&offset_flag, sizeof(int), 1, fp);
@@ -603,7 +603,7 @@ void PairMembraneSillanov2::write_restart_settings(FILE *fp)
    proc 0 reads from restart file, bcasts
 ------------------------------------------------------------------------- */
 
-void PairMembraneSillanov2::read_restart_settings(FILE *fp)
+void PairMesomem::read_restart_settings(FILE *fp)
 {
   if (comm->me == 0) {
 
@@ -621,7 +621,7 @@ void PairMembraneSillanov2::read_restart_settings(FILE *fp)
    proc 0 writes to data file
 ------------------------------------------------------------------------- */
 
-void PairMembraneSillanov2::write_data(FILE *fp)
+void PairMesomem::write_data(FILE *fp)
 {
   for (int i = 1; i <= atom->ntypes; i++)
     fprintf(fp, "%d %g %g %g %g %g %g %g\n", i, sigma[i][i], eps[i][i], ktilt[i][i],ksplay[i][i], cut[i][i], weight_rcut[i][i], zeta[i][i]);
@@ -631,7 +631,7 @@ void PairMembraneSillanov2::write_data(FILE *fp)
    proc 0 writes all pairs to data file
 ------------------------------------------------------------------------- */
 
-void PairMembraneSillanov2::write_data_all(FILE *fp)
+void PairMesomem::write_data_all(FILE *fp)
 {
   for (int i = 1; i <= atom->ntypes; i++)
     for (int j = i; j <= atom->ntypes; j++)

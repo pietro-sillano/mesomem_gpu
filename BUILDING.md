@@ -32,8 +32,8 @@ the file — edit them if you're building on a different cluster.
    builds + installs.
 5. Creates a Python virtualenv and installs the LAMMPS Python bindings
    into it via `python/install.py`.
-6. Runs a smoke test that loads `atom_style dipole_sphere_angle` and
-   `pair_style membrane_sillanov2` through the Python API and prints
+6. Runs a smoke test that loads `atom_style mesomem` and
+   `pair_style mesomem` through the Python API and prints
    `OK: ...` on success.
 
 ## Output layout
@@ -59,8 +59,8 @@ or from Python:
 ```python
 from lammps import lammps
 lmp = lammps()
-lmp.command('atom_style dipole_sphere_angle')
-lmp.command('pair_style membrane_sillanov2 2.5')
+lmp.command('atom_style mesomem')
+lmp.command('pair_style mesomem 2.5')
 ```
 
 See [`BENCHMARKS.md`](BENCHMARKS.md) for the canonical GPU run command and

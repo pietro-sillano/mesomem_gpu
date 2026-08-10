@@ -14,7 +14,7 @@ variable v_d string 0.85
 variable t_dump equal 1000
 
 units           lj
-atom_style      dipole_sphere_angle
+atom_style      mesomem
 neighbor 1.0 bin
 
 neigh_modify delay 5 every 1 check yes binsize 5.0
@@ -63,7 +63,7 @@ thermo ${t_dump}
 ##############################
 
 # global cutoff DEBUG
-pair_style      membrane_sillanov2 ${v_rcut}
+pair_style      mesomem ${v_rcut}
 # i j sigma eps ktilt ksplay rcut weightflag weight_rc
 pair_coeff      1 1 1.0 1.0 ${v_tilt} ${v_splay} ${v_rcut} ${v_wc} ${v_zeta} 0.0
 
