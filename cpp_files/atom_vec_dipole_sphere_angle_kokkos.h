@@ -13,26 +13,26 @@
 
 #ifdef ATOM_CLASS
 // clang-format off
-AtomStyle(mesomem/kk,AtomVecMesomemKokkos);
-AtomStyle(mesomem/kk/device,AtomVecMesomemKokkos);
-AtomStyle(mesomem/kk/host,AtomVecMesomemKokkos);
+AtomStyle(dipole_sphere_angle/kk,AtomVecDipoleSphereAngleKokkos);
+AtomStyle(dipole_sphere_angle/kk/device,AtomVecDipoleSphereAngleKokkos);
+AtomStyle(dipole_sphere_angle/kk/host,AtomVecDipoleSphereAngleKokkos);
 // clang-format on
 #else
 
 // clang-format off
-#ifndef LMP_ATOM_VEC_MESOMEM_KOKKOS_H
-#define LMP_ATOM_VEC_MESOMEM_KOKKOS_H
+#ifndef LMP_ATOM_VEC_DIPOLE_SPHERE_ANGLE_KOKKOS_H
+#define LMP_ATOM_VEC_DIPOLE_SPHERE_ANGLE_KOKKOS_H
 
-#include "atom_vec_mesomem.h"
+#include "atom_vec_dipole_sphere_angle.h"
 #include "atom_vec_kokkos.h"
 #include "kokkos_type.h"
 
 namespace LAMMPS_NS {
 
-class AtomVecMesomemKokkos : public AtomVecKokkos,
-                                        public AtomVecMesomem {
+class AtomVecDipoleSphereAngleKokkos : public AtomVecKokkos,
+                                        public AtomVecDipoleSphereAngle {
  public:
-  AtomVecMesomemKokkos(class LAMMPS *);
+  AtomVecDipoleSphereAngleKokkos(class LAMMPS *);
   void init() override;
 
   void grow(int) override;

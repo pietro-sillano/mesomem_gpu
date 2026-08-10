@@ -1,8 +1,8 @@
 """
 combine_vesicle_polymer.py
 
-Combines a mesomem vesicle data file with an angle-style polymer data file
-into a single LAMMPS data file using atom_style mesomem.
+Combines a dipole_sphere_angle vesicle data file with an angle-style polymer data file
+into a single LAMMPS data file using atom_style dipole_sphere_angle.
 
 - Streams the vesicle file line-by-line (file is ~80 MB, not loaded fully).
 - Loads the polymer file in memory (5.4 MB).
@@ -73,7 +73,7 @@ def stream_membrane_atoms(vesicle_path):
     """Yield (new_id, x, y, z, mol, diameter, density, q, mux, muy, muz) for type-1
     atoms in the vesicle file, streaming line by line.
 
-    mesomem Atoms format (OVITO angle+sphere+dipole convention):
+    dipole_sphere_angle Atoms format (OVITO angle+sphere+dipole convention):
         atom-ID type x y z mol-ID diameter density q mux muy muz [ix iy iz]
     """
     in_atoms = False
@@ -162,7 +162,7 @@ def _write_header(out, N_total, N_bonds, N_ang, v_info):
     out.write(f"{v_info['ylo']:.6f}  {v_info['yhi']:.6f}  ylo yhi\n")
     out.write(f"{v_info['zlo']:.6f}  {v_info['zhi']:.6f}  zlo zhi\n")
     out.write("\n")
-    # No Masses section: atom_style mesomem uses mass_type=PER_ATOM,
+    # No Masses section: atom_style dipole_sphere_angle uses mass_type=PER_ATOM,
     # so mass is stored per-atom in rmass (computed from density*volume in data_atom_post).
 
 
@@ -232,7 +232,7 @@ def combine(vesicle_path, polymer_path, out_path, viz_path=None):
         _write_bonds_angles(out, poly_bonds, poly_angles, orig_to_local, offset)
 
     # The output file already follows the OVITO angle+sphere+dipole column order,
-    # so OVITO can open it directly with atom_style mesomem.
+    # so OVITO can open it directly with atom_style dipole_sphere_angle.
 
     print(f"Done.")
     print(f"  {N_mem} membrane + {N_pol} polymer = {N_total} atoms, {N_bonds} bonds, {N_ang} angles")

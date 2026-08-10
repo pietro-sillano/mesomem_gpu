@@ -11,7 +11,7 @@
 #   out_file       full output path for the prepared data file
 
 units      lj
-atom_style mesomem
+atom_style dipole_sphere_angle
 neighbor   1.0 bin
 neigh_modify delay 0 every 1 check yes binsize 2.5
 boundary   p p p

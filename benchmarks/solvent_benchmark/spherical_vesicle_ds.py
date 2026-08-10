@@ -1,5 +1,5 @@
 """
-Generate a vesicle data file for atom_style mesomem (monolithic).
+Generate a vesicle data file for atom_style dipole_sphere_angle (monolithic).
 
 Membrane atoms are placed at icosphere-triangle centers; their dipoles point
 radially outward (= face normals). The data file declares 2 atom types so a
@@ -72,7 +72,7 @@ def write_data(outfile, positions, mu, radius, box_half,
                diameter, density, charge, n_types=2):
     n = positions.shape[0]
     with open(outfile, "w") as f:
-        f.write(f"LAMMPS data file for atom_style mesomem "
+        f.write(f"LAMMPS data file for atom_style dipole_sphere_angle "
                 f"(vesicle radius {radius:.3f})\n\n")
         f.write(f"{n} atoms\n")
         f.write(f"{n_types} atom types\n\n")

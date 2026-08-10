@@ -32,7 +32,7 @@ the file — edit them if you're building on a different cluster.
    builds + installs.
 5. Creates a Python virtualenv and installs the LAMMPS Python bindings
    into it via `python/install.py`.
-6. Runs a smoke test that loads `atom_style mesomem` and
+6. Runs a smoke test that loads `atom_style dipole_sphere_angle` and
    `pair_style mesomem` through the Python API and prints
    `OK: ...` on success.
 
@@ -59,9 +59,35 @@ or from Python:
 ```python
 from lammps import lammps
 lmp = lammps()
-lmp.command('atom_style mesomem')
+lmp.command('atom_style dipole_sphere_angle')
 lmp.command('pair_style mesomem 2.5')
 ```
 
 See [`BENCHMARKS.md`](BENCHMARKS.md) for the canonical GPU run command and
 performance tuning notes once you have a build.
+
+## Quick GPU smoke run on HPC
+
+[`run_gpu_small.sh`](run_gpu_small.sh) runs a short polymer+solvent GPU job
+against an existing `compile_hpc.sh` build — useful to sanity-check a GPU
+allocation before launching a full benchmark sweep:
+
+```bash
+srun --partition=gpu_a100 --ntasks=1 --gpus-per-node=1 \
+     --cpus-per-task=8 --time=00:05:00 --pty ./run_gpu_small.sh
+```
+
+It sources `_build/hpc/env.sh` (loading the same modules `compile_hpc.sh`
+used) and runs `benchmarks/polymer_solvent/polymer_solvent.lmp` for a
+small number of steps (`T_RUN`, default 200) on one GPU, writing to a
+timestamped run directory under `benchmarks/polymer_solvent/bench_runs/`.
+Requires `./compile_hpc.sh` to have been run first.
+
+## Batch GPU job
+
+[`slurm_job.sh`](slurm_job.sh) is a `sbatch`-submittable version of the
+same run — 1 MPI task, 4 OMP threads, 1 GPU:
+
+```bash
+sbatch slurm_job.sh
+```

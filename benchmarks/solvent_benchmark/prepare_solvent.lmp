@@ -9,7 +9,7 @@
 #   out_file  full output path (e.g. input/vesicle_ds_N5120_r18.4_d0.40.data)
 
 units      lj
-atom_style mesomem
+atom_style dipole_sphere_angle
 neighbor   1.0 bin
 neigh_modify delay 0 every 1 check yes binsize 2.5
 boundary   p p p

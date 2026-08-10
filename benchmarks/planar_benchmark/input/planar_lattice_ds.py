@@ -1,8 +1,8 @@
 """
-Generate a planar hexagonal lattice data file for atom_style mesomem
+Generate a planar hexagonal lattice data file for atom_style dipole_sphere_angle
 (monolithic, non-hybrid).
 
-Per atom_vec_mesomem.cpp the Atoms section column order is:
+Per atom_vec_dipole_sphere_angle.cpp the Atoms section column order is:
     id type x y z molecule diameter density q mux muy muz
 
 The data_atom_post hook converts diameter -> radius and (density,diameter) ->
@@ -46,14 +46,14 @@ def write_data(outfile, x, y, z, mux, muy, muz, types,
                Lx, Ly, Lz, diameter, density, q):
     n = len(x)
     with open(outfile, "w") as f:
-        f.write("LAMMPS data file for atom_style mesomem\n\n")
+        f.write("LAMMPS data file for atom_style dipole_sphere_angle\n\n")
         f.write(f"{n} atoms\n")
         f.write(f"{int(types.max())} atom types\n\n")
         f.write(f"{-Lx/2:.6f} {Lx/2:.6f} xlo xhi\n")
         f.write(f"{-Ly/2:.6f} {Ly/2:.6f} ylo yhi\n")
         f.write(f"{-Lz/2:.6f} {Lz/2:.6f} zlo zhi\n\n")
         # Atoms section: id type x y z molecule diameter density q mux muy muz
-        f.write("Atoms # mesomem\n\n")
+        f.write("Atoms # dipole_sphere_angle\n\n")
         for i in range(n):
             f.write(
                 f"{i+1} {int(types[i])} "

@@ -20,21 +20,21 @@
 
 #ifdef ATOM_CLASS
 // clang-format off
-AtomStyle(mesomem,AtomVecMesomem);
+AtomStyle(dipole_sphere_angle,AtomVecDipoleSphereAngle);
 // clang-format on
 #else
 
-#ifndef LMP_ATOM_VEC_MESOMEM_H
-#define LMP_ATOM_VEC_MESOMEM_H
+#ifndef LMP_ATOM_VEC_DIPOLE_SPHERE_ANGLE_H
+#define LMP_ATOM_VEC_DIPOLE_SPHERE_ANGLE_H
 
 #include "atom_vec.h"
 
 namespace LAMMPS_NS {
 
-class AtomVecMesomem : virtual public AtomVec {
+class AtomVecDipoleSphereAngle : virtual public AtomVec {
  public:
-  AtomVecMesomem(class LAMMPS *);
-  ~AtomVecMesomem() override;
+  AtomVecDipoleSphereAngle(class LAMMPS *);
+  ~AtomVecDipoleSphereAngle() override;
 
   void grow_pointers() override;
   void create_atom_post(int) override;

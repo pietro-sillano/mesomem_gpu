@@ -1,9 +1,9 @@
-# Diagnostic: check CPU vs GPU temperatures for atom_style mesomem.
+# Diagnostic: check CPU vs GPU temperatures for atom_style dipole_sphere_angle.
 # Uses the small 8600-atom planar membrane (type 1 only, no polymer).
 # Checks that temp/sphere on GPU now gives ~T_target after the omega_thermostat fix.
 
 units lj
-atom_style mesomem
+atom_style dipole_sphere_angle
 boundary p p p
 neighbor 1.0 bin
 neigh_modify delay 0 every 1 check yes binsize 5
