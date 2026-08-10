@@ -156,8 +156,8 @@ deactivate
 # --------------------------------------------------------------------------
 {
   echo "# source this file to use the local MesoMem GPU LAMMPS build"
-  echo "export PATH=\"$INSTALL_PREFIX/bin:\$PATH\""
-  echo "export LD_LIBRARY_PATH=\"$LIB_DIR:\$LD_LIBRARY_PATH\""
+  echo "export PATH=\"$INSTALL_PREFIX/bin:\${PATH:-}\""
+  echo "export LD_LIBRARY_PATH=\"$LIB_DIR:\${LD_LIBRARY_PATH:-}\""
 } > "$ENV_FILE"
 echo "-- wrote $ENV_FILE --"
 

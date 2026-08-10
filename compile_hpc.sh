@@ -162,8 +162,8 @@ deactivate
   echo "module load foss/2025b"
   echo "module load Python/3.13.5-GCCcore-14.3.0"
   echo "module load CUDA/12.9.1"
-  echo "export PATH=\"$INSTALL_PREFIX/bin:\$PATH\""
-  echo "export LD_LIBRARY_PATH=\"$LIB_DIR:\$LD_LIBRARY_PATH\""
+  echo "export PATH=\"$INSTALL_PREFIX/bin:\${PATH:-}\""
+  echo "export LD_LIBRARY_PATH=\"$LIB_DIR:\${LD_LIBRARY_PATH:-}\""
 } > "$ENV_FILE"
 echo "-- wrote $ENV_FILE --"
 
