@@ -58,7 +58,7 @@ module load foss/2025b
 module load Python/3.13.5-GCCcore-14.3.0
 # Adjust the CUDA module name/version to whatever is available on the
 # cluster's GPU partition (check with 'module avail CUDA').
-module load CUDA/12.6.0
+module load CUDA/12.9.1
 
 PYTHON_BIN="$(command -v python3)"
 command -v nvcc >/dev/null 2>&1 || { echo "ERROR: nvcc not found after loading modules"; exit 1; }
@@ -161,7 +161,7 @@ deactivate
   echo "module load 2025"
   echo "module load foss/2025b"
   echo "module load Python/3.13.5-GCCcore-14.3.0"
-  echo "module load CUDA/12.6.0"
+  echo "module load CUDA/12.9.1"
   echo "export PATH=\"$INSTALL_PREFIX/bin:\$PATH\""
   echo "export LD_LIBRARY_PATH=\"$LIB_DIR:\$LD_LIBRARY_PATH\""
 } > "$ENV_FILE"
