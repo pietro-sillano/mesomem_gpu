@@ -1,0 +1,30 @@
+N,OMP,neigh,newton,comm,sort,TPS,Wall_Time,CPU_Info,GPU_Name,GPU_Cap,LMP_Binary
+9600,4,half,on,host,host,1383.771,1.6640219688415527,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+9600,4,half,on,host,device,1384.962,1.2348315715789795,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+9600,4,half,on,device,host,2206.145,0.9679827690124512,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+9600,4,half,on,device,device,2204.585,0.9675240516662598,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+9600,4,full,off,host,host,1892.452,1.0292093753814697,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+9600,4,full,off,host,device,1852.307,1.0383327007293701,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+9600,4,full,off,device,host,2769.945,0.8597924709320068,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+9600,4,full,off,device,device,2769.738,0.8753128051757812,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+38400,4,half,on,host,host,613.592,2.335310935974121,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+38400,4,half,on,host,device,611.766,2.3298323154449463,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+38400,4,half,on,device,host,1145.496,1.6030189990997314,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+38400,4,half,on,device,device,1134.563,1.571495771408081,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+38400,4,full,off,host,host,573.079,2.460188627243042,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+38400,4,full,off,host,device,581.947,2.4199836254119873,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+38400,4,full,off,device,host,842.344,1.8803071975708008,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+38400,4,full,off,device,device,837.745,1.9030671119689941,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+153600,4,half,on,host,host,194.008,6.748977899551392,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+153600,4,half,on,host,device,198.955,6.599113941192627,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+153600,4,half,on,device,host,395.574,4.143299579620361,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+
+153600,4,half,on,device,device,392.385,4.143373489379883,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+
+153600,4,full,off,host,host,182.854,7.068089962005615,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+
+153600,4,full,off,host,device,189.008,6.857187747955322,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+
+153600,4,full,off,device,host,292.061,5.039929628372192,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off
+
+153600,4,full,off,device,device,290.051,5.038286447525024,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off

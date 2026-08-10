@@ -1,0 +1,7 @@
+N,MPI,OMP,GPU,TPS,Wall_Time,CPU_Info,GPU_Name,GPU_Cap,LMP_Binary,Notes
+600,1,4,True,2486.107,0.9338254928588867,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off,Kokkos_GPU
+2400,1,4,True,2332.353,0.918755054473877,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off,Kokkos_GPU
+9600,1,4,True,2211.887,0.9762756824493408,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off,Kokkos_GPU
+38400,1,4,True,1126.002,1.6048591136932373,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off,Kokkos_GPU
+153600,1,4,True,392.007,4.1279871463775635,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off,Kokkos_GPU
+614400,1,4,True,120.961,13.010907649993896,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,lmp_kokkos_89_uvm_off,Kokkos_GPU

@@ -1,0 +1,173 @@
+LAMMPS (22 Jul 2025 - Update 4)
+KOKKOS mode with Kokkos version 4.6.2 is enabled
+  will use up to 1 GPU(s) per node
+  using 4 OpenMP thread(s) per MPI task
+package kokkos
+package kokkos newton off neigh full comm host
+# mpirun -np 8 lmp_radial -i torus_edges.lmp -v R 5.0 -v h 20.0 -v kt 18
+variable t_dump equal 100
+# variable v_rcut string 2.5
+
+units           lj
+atom_style      full
+neighbor        0.5 bin
+neigh_modify    delay 0 every 1 check yes
+
+dimension       3
+boundary        p p p
+
+# read torus with planes equilibrated
+read_data       torus_R_8.0_h_20.0_eq.data
+Reading data file ...
+  triclinic box = (-45 -45 -45) to (45 45 45) with tilt (0 0 0)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+  24336 atoms
+  reading velocities ...
+  24336 velocities
+  scanning bonds ...
+  2 = max bonds/atom
+  scanning angles ...
+  1 = max angles/atom
+  triclinic box = (-45 -45 -45) to (45 45 45) with tilt (0 0 0)
+  1 by 1 by 1 MPI processor grid
+  reading bonds ...
+  16224 bonds
+  reading angles ...
+  8112 angles
+Finding 1-2 1-3 1-4 neighbors ...
+  special bond factors lj:    0        0        0       
+  special bond factors coul:  0        0        0       
+     2 = max # of 1-2 neighbors
+     1 = max # of 1-3 neighbors
+     1 = max # of 1-4 neighbors
+     2 = max # of special neighbors
+  special bonds CPU = 0.028 seconds
+  read_data CPU = 0.559 seconds
+
+# Compute commands
+compute         E_kin_trans all ke
+compute         E_pot all pe
+variable        E_tot equal c_E_pot+c_E_kin_trans
+
+compute        C_temp_baro all temp
+compute        C_press_baro all pressure C_temp_baro
+
+thermo_style    custom step spcpu cpuremain temp c_E_pot c_E_kin_trans v_E_tot press pxy
+thermo          ${t_dump}
+thermo          100
+# Groups
+group           heads type 1
+8112 atoms in group heads
+group           tails type 2
+16224 atoms in group tails
+
+bond_style      fene
+bond_coeff      1 30.0 1.5 1.0 1.0
+
+angle_style     harmonic
+angle_coeff     1 5.0 180
+
+special_bonds   lj 0.0 1.0 1.0
+Finding 1-2 1-3 1-4 neighbors ...
+  special bond factors lj:    0        1        1       
+  special bond factors coul:  0        0        0       
+     2 = max # of 1-2 neighbors
+     1 = max # of 1-3 neighbors
+     1 = max # of 1-4 neighbors
+     2 = max # of special neighbors
+  special bonds CPU = 0.027 seconds
+
+timestep        0.01
+#dump            coords all custom ${t_dump} position.lammpstrj id mol type xu yu zu
+
+# ── Step 2: Main minimization ────────────────────────────────────────────── #
+variable hydro_w equal 1.5
+variable two6 equal $(2^(1/6))
+variable two6 equal 1.1224620483093730172
+variable hh_sigma equal $(0.95*v_two6)
+variable hh_sigma equal 1.0663389458939014354
+variable tt_sigma equal $(v_two6)
+variable tt_sigma equal 1.1224620483093699086
+variable tt_rc equal $(v_two6+v_hydro_w)
+variable tt_rc equal 2.6224620483093699086
+
+# cosine/squared/kk has a memory bug in this LAMMPS build; force CPU pair eval
+suffix off
+pair_style      cosine/squared ${tt_rc}
+pair_style      cosine/squared 2.62246204830937
+
+# 1 : head , 2 : tail
+pair_coeff      1 1 1. ${hh_sigma} ${hh_sigma} wca
+pair_coeff      1 1 1. 1.0663389458939 ${hh_sigma} wca
+pair_coeff      1 1 1. 1.0663389458939 1.0663389458939 wca
+WARNING: Cosine/squared set to WCA only (cutoff = sigma)
+For more information see https://docs.lammps.org/err0021 (src/EXTRA-PAIR/pair_cosine_squared.cpp:159)
+pair_coeff      1 2 1. ${hh_sigma} ${hh_sigma} wca
+pair_coeff      1 2 1. 1.0663389458939 ${hh_sigma} wca
+pair_coeff      1 2 1. 1.0663389458939 1.0663389458939 wca
+WARNING: Cosine/squared set to WCA only (cutoff = sigma)
+For more information see https://docs.lammps.org/err0021 (src/EXTRA-PAIR/pair_cosine_squared.cpp:159)
+pair_coeff      2 2 1. ${tt_sigma} ${tt_rc} wca
+pair_coeff      2 2 1. 1.12246204830937 ${tt_rc} wca
+pair_coeff      2 2 1. 1.12246204830937 2.62246204830937 wca
+suffix on
+
+minimize        1.0e-4 1.0e-6 100 20000
+Generated 0 of 1 mixed pair_coeff terms from geometric mixing rule
+Neighbor list info ...
+  update: every = 1 steps, delay = 0 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 3.122462
+  ghost atom cutoff = 3.122462
+  binsize = 3.122462, bins = 29 29 29
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair cosine/squared, perpetual
+      attributes: half, newton off
+      pair build: half/bin/newtoff
+      stencil: full/bin/3d
+      bin: standard
+WARNING: Fix MINIMIZE/kk not compatible with sending data in Kokkos communication (src/KOKKOS/comm_kokkos.cpp:799)
+WARNING: Fix with atom-based arrays not compatible with sending data in Kokkos communication, switching to classic exchange/border communication (src/KOKKOS/comm_kokkos.cpp:812)
+WARNING: Fix MINIMIZE/kk not compatible with Kokkos sorting on device (src/KOKKOS/atom_kokkos.cpp:213)
+WARNING: Fix with atom-based arrays not compatible with Kokkos sorting on device, switching to classic host sorting (src/KOKKOS/atom_kokkos.cpp:219)
+Per MPI rank memory allocation (min/avg/max) = 22.37 | 22.37 | 22.37 Mbytes
+   Step         S/CPU         CPULeft          Temp         c_E_pot     c_E_kin_trans     v_E_tot         Press           Pxy      
+         0   0              0              1.0086984      8.6197597      1.5129855      246590.49      0.0069822565   0.0020462857 
+       100   17.350459      0              1.0086984      6.886185       1.5129855      204402.21     -0.033443704   -5.6010932e-05
+Loop time of 5.76365 on 4 procs for 100 steps with 24336 atoms
+
+391.3% CPU use with 1 MPI tasks x 4 OpenMP threads
+
+Minimization stats:
+  Stopping criterion = max iterations
+  Energy initial, next-to-last, final = 
+      8.61975969421947    6.8910460217318   6.88618500141552
+  Force two-norm initial, final = 7054.5564 583.64742
+  Force max component initial, final = 188.72316 115.76723
+  Final line search alpha, max atom move = 0.0010597659 0.12268616
+  Iterations, force evaluations = 100 146
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 4.3907     | 4.3907     | 4.3907     |   0.0 | 76.18
+Bond    | 0.16916    | 0.16916    | 0.16916    |   0.0 |  2.93
+Neigh   | 0.88222    | 0.88222    | 0.88222    |   0.0 | 15.31
+Comm    | 0.022478   | 0.022478   | 0.022478   |   0.0 |  0.39
+Output  | 0.0014922  | 0.0014922  | 0.0014922  |   0.0 |  0.03
+Modify  | 0          | 0          | 0          |   0.0 |  0.00
+Other   |            | 0.2976     |            |       |  5.16
+
+Nlocal:          24336 ave       24336 max       24336 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:              0 ave           0 max           0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:         666485 ave      666485 max      666485 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 666485
+Ave neighs/atom = 27.386793
+Ave special neighs/atom = 2
+Neighbor list builds = 14
+Dangerous builds = 0

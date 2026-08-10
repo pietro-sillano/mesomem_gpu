@@ -1,0 +1,70 @@
+# Deserno/Cooke planar bilayer benchmark
+# Variables passed from command line:
+#   N          - total atoms (beads); must be divisible by 6
+#   t_run      - number of MD steps
+#   lipid_file - absolute path to lipid.txt molecule template
+
+variable halfL      equal sqrt(${N}/6.0)/2.0
+variable halfL_z    equal 10.0
+variable temperature equal 1.0
+variable seed        equal 6432
+variable t_dump      equal 1000
+
+units      lj
+atom_style angle
+processors * * 1
+
+region box block -${halfL} ${halfL} -${halfL} ${halfL} -${halfL_z} ${halfL_z}
+boundary p p p
+create_box 2 box bond/types 1 angle/types 1 &
+    extra/bond/per/atom 3 extra/angle/per/atom 3 extra/special/per/atom 3
+
+timer full sync
+
+neighbor 1.0 bin
+# Coarser binsize avoids memory blowup for planar atoms in a 3D box.
+neigh_modify delay 1 every 1 check yes binsize 5.0
+
+mass 1 1.0
+mass 2 1.0
+
+# Cooke lipid parameters
+variable hydro_w  equal 1.5
+variable two6     equal $(2^(1/6))
+variable hh_sigma equal $(0.95*v_two6)
+variable tt_sigma equal $(v_two6)
+variable tt_rc    equal $(v_two6+v_hydro_w)
+
+special_bonds lj 0 1 1
+pair_style    cosine/squared ${tt_rc}
+bond_style    fene
+angle_style   harmonic
+
+# 1 = head, 2 = tail
+pair_coeff 1 1 1. ${hh_sigma} ${hh_sigma} wca
+pair_coeff 1 2 1. ${hh_sigma} ${hh_sigma} wca
+pair_coeff 2 2 1. ${tt_sigma} ${tt_rc} wca
+bond_coeff 1 30.0 1.5 1.0 1.0
+angle_coeff 1 5.0 180.0
+
+molecule lipid ${lipid_file}
+
+# Build bilayer: one lattice site per lipid, density = 1/sigma^2 per leaflet
+lattice custom 1. a1 1 0 0 a2 0 1 0 a3 0 0 1 origin 0 0 0 basis 0.5 0.5 0.5
+region upper_leaflet block EDGE EDGE EDGE EDGE  1.5  1.5 units box
+create_atoms 0 region upper_leaflet mol lipid 1 rotate   0 1 0 0
+region lower_leaflet block EDGE EDGE EDGE EDGE -1.5 -1.5 units box
+create_atoms 0 region lower_leaflet mol lipid 1 rotate 180 1 0 0
+
+thermo_style custom step spcpu cpuremain temp pe etotal
+thermo ${t_dump}
+
+# NVE + Langevin: fixed box gives reproducible benchmark numbers.
+# For a tensionless ensemble swap to: fix nph x 0 0 10 y 0 0 10 couple xy
+fix f_nve  all nve
+fix fLANG  all langevin ${temperature} ${temperature} 1.0 ${seed} zero yes
+
+velocity all create ${temperature} ${seed}
+timestep 0.01
+
+run ${t_run}

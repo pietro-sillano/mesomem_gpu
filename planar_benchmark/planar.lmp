@@ -1,0 +1,93 @@
+
+
+variable v_N string ${N}
+variable v_t_run string ${t_run}
+
+variable v_rcut equal 2.5
+variable v_splay equal 1
+variable v_tilt equal 15
+variable v_wc equal 2.0
+variable v_T equal 0.25
+variable v_zeta equal 5
+variable v_d string 0.85
+
+variable t_dump equal 1000
+
+units           lj
+atom_style      dipole_sphere_angle
+neighbor 1.0 bin
+
+neigh_modify delay 5 every 1 check yes binsize 5.0
+
+dimension       3
+boundary        p p p
+processors      * * 1
+
+read_data ../../input/lattice_d_${v_d}_N_${N}_ds
+variable my_diameter equal 4.0
+set      type 1 diameter ${my_diameter}
+variable my_volume equal (4.0/3.0)*PI*((${my_diameter}*0.5)^3)
+# in principle i want to keep my mass fixed for unit conversions! density I dont really care
+variable my_mass equal 1.0
+variable my_density equal ${my_mass}/${my_volume}
+
+set      type 1 density ${my_density}
+print "m:${my_mass} V:${my_volume} rho:${my_density}" file info_mass.dat screen yes
+
+#*******************************************************************************
+# Various computes
+#*******************************************************************************
+
+# compute E_kin_trans all ke
+# compute E_kin_rot all erotate/sphere
+# compute E_pot all pe
+# variable E_tot equal c_E_pot+c_E_kin_trans+c_E_kin_rot
+compute Tall all temp/sphere dof all
+# compute a all temp
+
+
+# Nevery = input values this every timesteps
+# Nrepeat = # of times input values should be read before averaging (usually 1, no averaging)
+# Nfreq = calculate averages every this time step
+# fix fix_energies all ave/time 5000 1 5000  v_E_tot c_E_pot c_E_kin_trans c_E_kin_rot file energy.dat
+
+
+# compute        C_temp_baro all temp/
+# compute        C_press_baro all pressure C_temp_baro
+
+thermo_style custom step spcpu cpuremain temp pe etotal
+thermo ${t_dump}
+
+##############################
+######## PAIR STYLE ##########
+##############################
+
+# global cutoff DEBUG
+pair_style      membrane_sillanov2 ${v_rcut}
+# i j sigma eps ktilt ksplay rcut weightflag weight_rc
+pair_coeff      1 1 1.0 1.0 ${v_tilt} ${v_splay} ${v_rcut} ${v_wc} ${v_zeta} 0.0
+
+# dump coords all custom ${t_dump} position.lammpstrj id type xu yu zu ix iy iz vx vy vz mux muy muz omegax omegay omegaz fx fy fz tqx tqy tqz
+
+# dump coords all custom ${t_dump} position.lammpstrj id type xu yu zu mux muy muz
+
+timestep        0.01
+
+# minimize 1.0e-8 1.0e-6 1000 10000
+# write_data ../../input/lattice_d_${v_d}_N_${N}_min
+# quit
+
+
+fix             f_nve all nve/sphere update dipole
+# damp smalller, more viscous
+fix fLANG   all   langevin ${v_T} ${v_T} 1.0 6432 zero yes omega yes
+run ${v_t_run}
+
+# unfix f_nve
+
+# fix      fNPH_membrane         all     nph/sphere x 0.0 0.0 100.0  y 0.0 0.0 100.0 couple xy drag 5.0 dilate all nreset 100 update dipole
+# fix_modify fNPH_membrane temp C_temp_baro press C_press_baro
+#
+# run 100000
+
+

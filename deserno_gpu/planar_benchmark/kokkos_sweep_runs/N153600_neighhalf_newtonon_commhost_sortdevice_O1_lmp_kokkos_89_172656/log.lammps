@@ -1,0 +1,181 @@
+LAMMPS (22 Jul 2025 - Update 4)
+KOKKOS mode with Kokkos version 4.6.2 is enabled
+  will use up to 1 GPU(s) per node
+WARNING: When using a single thread, the Kokkos Serial backend (i.e. Makefile.kokkos_mpi_only) gives better performance than the OpenMP backend (src/KOKKOS/kokkos.cpp:221)
+  using 1 OpenMP thread(s) per MPI task
+package kokkos
+package kokkos newton on neigh half comm host sort device
+# Deserno/Cooke planar bilayer benchmark
+# Variables passed from command line:
+#   N          - total atoms (beads); must be divisible by 6
+#   t_run      - number of MD steps
+#   lipid_file - absolute path to lipid.txt molecule template
+
+variable halfL      equal sqrt(${N}/6.0)/2.0
+variable halfL      equal sqrt(153600/6.0)/2.0
+variable halfL_z    equal 10.0
+variable temperature equal 1.0
+variable seed        equal 6432
+variable t_dump      equal 1000
+
+units      lj
+atom_style angle
+processors * * 1
+
+region box block -${halfL} ${halfL} -${halfL} ${halfL} -${halfL_z} ${halfL_z}
+region box block -80 ${halfL} -${halfL} ${halfL} -${halfL_z} ${halfL_z}
+region box block -80 80 -${halfL} ${halfL} -${halfL_z} ${halfL_z}
+region box block -80 80 -80 ${halfL} -${halfL_z} ${halfL_z}
+region box block -80 80 -80 80 -${halfL_z} ${halfL_z}
+region box block -80 80 -80 80 -10 ${halfL_z}
+region box block -80 80 -80 80 -10 10
+boundary p p p
+create_box 2 box bond/types 1 angle/types 1     extra/bond/per/atom 3 extra/angle/per/atom 3 extra/special/per/atom 3
+Created orthogonal box = (-80 -80 -10) to (80 80 10)
+  1 by 1 by 1 MPI processor grid
+
+timer full sync
+New timer settings: style=full  mode=sync  timeout=off
+
+neighbor 1.0 bin
+# Coarser binsize avoids memory blowup for planar atoms in a 3D box.
+neigh_modify delay 1 every 1 check yes binsize 5.0
+
+mass 1 1.0
+mass 2 1.0
+
+# Cooke lipid parameters
+variable hydro_w  equal 1.5
+variable two6     equal $(2^(1/6))
+variable two6     equal 1.1224620483093730172
+variable hh_sigma equal $(0.95*v_two6)
+variable hh_sigma equal 1.0663389458939014354
+variable tt_sigma equal $(v_two6)
+variable tt_sigma equal 1.1224620483093699086
+variable tt_rc    equal $(v_two6+v_hydro_w)
+variable tt_rc    equal 2.6224620483093699086
+
+special_bonds lj 0 1 1
+Finding 1-2 1-3 1-4 neighbors ...
+  special bond factors lj:    0        1        1       
+  special bond factors coul:  0        0        0       
+     0 = max # of 1-2 neighbors
+     0 = max # of 1-3 neighbors
+     0 = max # of 1-4 neighbors
+     7 = max # of special neighbors
+  special bonds CPU = 0.002 seconds
+pair_style    cosine/squared ${tt_rc}
+pair_style    cosine/squared 2.62246204830937
+bond_style    fene
+angle_style   harmonic
+
+# 1 = head, 2 = tail
+pair_coeff 1 1 1. ${hh_sigma} ${hh_sigma} wca
+pair_coeff 1 1 1. 1.0663389458939 ${hh_sigma} wca
+pair_coeff 1 1 1. 1.0663389458939 1.0663389458939 wca
+WARNING: Cosine/squared set to WCA only (cutoff = sigma)
+For more information see https://docs.lammps.org/err0021 (src/EXTRA-PAIR/pair_cosine_squared.cpp:159)
+pair_coeff 1 2 1. ${hh_sigma} ${hh_sigma} wca
+pair_coeff 1 2 1. 1.0663389458939 ${hh_sigma} wca
+pair_coeff 1 2 1. 1.0663389458939 1.0663389458939 wca
+WARNING: Cosine/squared set to WCA only (cutoff = sigma)
+For more information see https://docs.lammps.org/err0021 (src/EXTRA-PAIR/pair_cosine_squared.cpp:159)
+pair_coeff 2 2 1. ${tt_sigma} ${tt_rc} wca
+pair_coeff 2 2 1. 1.12246204830937 ${tt_rc} wca
+pair_coeff 2 2 1. 1.12246204830937 2.62246204830937 wca
+bond_coeff 1 30.0 1.5 1.0 1.0
+angle_coeff 1 5.0 180.0
+
+molecule lipid ${lipid_file}
+molecule lipid /martini/pietro/mesomem_gpu/deserno_gpu/planar_benchmark/lipid.txt
+Read molecule template lipid:
+# Cooke lipid
+  1 molecules
+  0 fragments
+  0 bodies
+  3 atoms with max type 2
+  2 bonds with max type 1
+  1 angles with max type 1
+  0 dihedrals with max type 0
+  0 impropers with max type 0
+
+# Build bilayer: one lattice site per lipid, density = 1/sigma^2 per leaflet
+lattice custom 1. a1 1 0 0 a2 0 1 0 a3 0 0 1 origin 0 0 0 basis 0.5 0.5 0.5
+Lattice spacing in x,y,z = 1 1 1
+region upper_leaflet block EDGE EDGE EDGE EDGE  1.5  1.5 units box
+create_atoms 0 region upper_leaflet mol lipid 1 rotate   0 1 0 0
+Created 76800 atoms
+  using lattice units in orthogonal box = (-80 -80 -10) to (80 80 10)
+  create_atoms CPU = 0.420 seconds
+region lower_leaflet block EDGE EDGE EDGE EDGE -1.5 -1.5 units box
+create_atoms 0 region lower_leaflet mol lipid 1 rotate 180 1 0 0
+Created 76800 atoms
+  using lattice units in orthogonal box = (-80 -80 -10) to (80 80 10)
+  create_atoms CPU = 0.357 seconds
+
+thermo_style custom step spcpu cpuremain temp pe etotal
+thermo ${t_dump}
+thermo 1000
+
+# NVE + Langevin: fixed box gives reproducible benchmark numbers.
+# For a tensionless ensemble swap to: fix nph x 0 0 10 y 0 0 10 couple xy
+fix f_nve  all nve
+fix fLANG  all langevin ${temperature} ${temperature} 1.0 ${seed} zero yes
+fix fLANG  all langevin 1 ${temperature} 1.0 ${seed} zero yes
+fix fLANG  all langevin 1 1 1.0 ${seed} zero yes
+fix fLANG  all langevin 1 1 1.0 6432 zero yes
+
+velocity all create ${temperature} ${seed}
+velocity all create 1 ${seed}
+velocity all create 1 6432
+timestep 0.01
+
+run ${t_run}
+run 1000
+Generated 0 of 1 mixed pair_coeff terms from geometric mixing rule
+Neighbor list info ...
+  update: every = 1 steps, delay = 1 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 3.622462
+  ghost atom cutoff = 3.622462
+  binsize = 5, bins = 32 32 4
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair cosine/squared/kk, perpetual
+      attributes: half, newton on, kokkos_device
+      pair build: half/bin/newton/kk/device
+      stencil: half/bin/3d
+      bin: kk/device
+Per MPI rank memory allocation (min/avg/max) = 58.9 | 58.9 | 58.9 Mbytes
+   Step         S/CPU         CPULeft          Temp          PotEng         TotEng    
+         0   0              0              1              8.0012826      9.5012728    
+      1000   100.72801      0              1.0004915      7.3085803      8.8093077    
+Loop time of 9.92775 on 1 procs for 1000 steps with 153600 atoms
+
+Performance: 87028.824 tau/day, 100.728 timesteps/s, 15.472 Matom-step/s
+81.6% CPU use with 1 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg|  %CPU | %total
+-----------------------------------------------------------------------
+Pair    | 0.23283    | 0.23283    | 0.23283    |   0.0 |  82.1 |  2.35
+Bond    | 2.368      | 2.368      | 2.368      |   0.0 |  97.2 | 23.85
+Neigh   | 0.29211    | 0.29211    | 0.29211    |   0.0 |  91.9 |  2.94
+Comm    | 5.7937     | 5.7937     | 5.7937     |   0.0 |  81.6 | 58.36
+Output  | 5.0165e-05 | 5.0165e-05 | 5.0165e-05 |   0.0 | 100.0 |  0.00
+Modify  | 1.1825     | 1.1825     | 1.1825     |   0.0 |  48.5 | 11.91
+Sync    | 0.0026209  | 0.0026209  | 0.0026209  |   0.0 | 100.0 |  0.03
+Other   |            | 0.05596    |            |       |       |  0.56
+
+Nlocal:         153600 ave      153600 max      153600 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:          14218 ave       14218 max       14218 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    7.48266e+06 ave 7.48266e+06 max 7.48266e+06 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 7482663
+Ave neighs/atom = 48.715254
+Ave special neighs/atom = 2
+Neighbor list builds = 86
+Dangerous builds = 0
+Total wall time: 0:00:11

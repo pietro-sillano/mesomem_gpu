@@ -1,0 +1,128 @@
+LAMMPS (30 Mar 2026 - Development - patch_30Mar2026-1026-g5ea3b58ad8-modified)
+KOKKOS mode with Kokkos version 5.1.99 is enabled
+  using double precision
+  using view layout = legacy
+  will use up to 1 GPU(s) per node
+  using 1 OpenMP thread(s) per MPI task
+package kokkos
+package kokkos newton off neigh full comm device
+units lj
+atom_style sphere
+boundary p p p
+
+lattice fcc 0.8
+Lattice spacing in x,y,z = 1.7099759 1.7099759 1.7099759
+region box block 0 8 0 8 0 8
+create_box 1 box
+Created orthogonal box = (0 0 0) to (13.679808 13.679808 13.679808)
+  1 by 1 by 1 MPI processor grid
+create_atoms 1 box
+Created 2048 atoms
+  using lattice units in orthogonal box = (0 0 0) to (13.679808 13.679808 13.679808)
+  create_atoms CPU = 0.027 seconds
+
+set type 1 diameter 1.0
+Setting atom values ...
+  2048 settings made for diameter
+set type 1 density 1.0
+Setting atom values ...
+  2048 settings made for density
+
+pair_style lj/cut 2.5
+pair_coeff 1 1 1.0 1.0 2.5
+
+velocity all create 1.0 12345 dist gaussian
+
+compute T_sp all temp/sphere
+compute T_tr all temp
+
+thermo_style custom step temp c_T_sp c_T_tr ke
+thermo 100
+
+fix fnve  all nve/sphere
+fix flang all langevin 1.0 1.0 1.0 12345 omega yes
+
+run 2000
+
+CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE
+
+Your simulation uses code contributions which should be cited:
+
+- KOKKOS package: https://doi.org/10.1145/3731599.3767498
+
+@inproceedings{Johansson25,
+ author = {A. Johansson and E. Weinberg and C. Trott and M. McCarthy and S. Moore},
+ title = {{LAMMPS-KOKKOS}: {P}erformance Portable Molecular Dynamics Across Exascale Architectures},
+ year = 2025,
+ booktitle = {Proceedings of the SC '25 Workshops of the International Conference for High Performance Computing,
+  Networking, Storage and Analysis},
+ pages = {1217–1232},
+}
+
+CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE
+
+Generated 0 of 0 mixed pair_coeff terms from geometric mixing rule
+Neighbor list info ...
+  update: every = 1 steps, delay = 0 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 2.8
+  ghost atom cutoff = 2.8
+  binsize = 2.8, bins = 5 5 5
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair lj/cut/kk, perpetual
+      attributes: full, newton off, kokkos_device
+      pair build: full/bin/kk/device
+      stencil: full/bin/3d
+      bin: kk/device
+Per MPI rank memory allocation (min/avg/max) = 4.621 | 4.621 | 4.621 Mbytes
+   Step          Temp          c_T_sp         c_T_tr         KinEng    
+         0   1              0.4998779      1              1.4992676    
+       100   0.7365621      0.84738776     0.7365621      1.1043037    
+       200   0.84496068     0.92634989     0.84496068     1.2668222    
+       300   0.8870057      0.94773242     0.8870057      1.3298589    
+       400   0.94932118     0.98684098     0.94932118     1.4232865    
+       500   0.98240844     0.99488865     0.98240844     1.4728931    
+       600   0.9748033      1.0012853      0.9748033      1.461491     
+       700   0.99842284     1.0005409      0.99842284     1.496903     
+       800   1.0363936      1.0194736      1.0363936      1.5538313    
+       900   1.0143819      1.0176792      1.0143819      1.5208299    
+      1000   1.0350863      1.0018126      1.0350863      1.5518713    
+      1100   1.0149472      0.99883683     1.0149472      1.5216774    
+      1200   0.97166722     0.99263715     0.97166722     1.4567892    
+      1300   0.99537545     0.99417038     0.99537545     1.4923341    
+      1400   0.99781888     1.0134194      0.99781888     1.4959975    
+      1500   0.99081557     0.99726251     0.99081557     1.4854977    
+      1600   1.0146837      1.0135471      1.0146837      1.5212823    
+      1700   0.9962463      0.9952333      0.9962463      1.4936398    
+      1800   0.99809992     0.99877821     0.99809992     1.4964189    
+      1900   1.0091236      1.0018808      1.0091236      1.5129462    
+      2000   0.9815507      0.99903005     0.9815507      1.4716071    
+Loop time of 0.322967 on 1 procs for 2000 steps with 2048 atoms
+
+Performance: 2675195.205 tau/day, 6192.581 timesteps/s, 12.682 Matom-step/s
+3187.2% CPU use with 1 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.011617   | 0.011617   | 0.011617   |   0.0 |  3.60
+Neigh   | 0.10134    | 0.10134    | 0.10134    |   0.0 | 31.38
+Comm    | 0.085891   | 0.085891   | 0.085891   |   0.0 | 26.59
+Output  | 0.00092589 | 0.00092589 | 0.00092589 |   0.0 |  0.29
+Modify  | 0.027529   | 0.027529   | 0.027529   |   0.0 |  8.52
+Other   |            | 0.09567    |            |       | 29.62
+
+Nlocal:           2048 ave        2048 max        2048 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:           3730 ave        3730 max        3730 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:              0 ave           0 max           0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+FullNghs:       146526 ave      146526 max      146526 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 146526
+Ave neighs/atom = 71.545898
+Neighbor list builds = 346
+Dangerous builds = 0
+Total wall time: 0:00:01

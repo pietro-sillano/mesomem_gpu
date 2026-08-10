@@ -1,0 +1,52 @@
+# Prep stage: read vesicle membrane data file, add solvent atoms inside and
+# outside the vesicle, run a short minimization, and write a complete data
+# file that the GPU benchmark can read directly. Run on CPU with multi-MPI
+# (no -sf kk / no -k flags). Required variables:
+#   N         membrane atom count (locates input/vesicle_ds_N${N}_d0.85.data)
+#   N_in      number of solvent atoms inside vesicle
+#   N_out     number of solvent atoms outside vesicle
+#   radius    vesicle radius
+#   out_file  full output path (e.g. input/vesicle_ds_N5120_r18.4_d0.40.data)
+
+units      lj
+atom_style dipole_sphere_angle
+neighbor   1.0 bin
+neigh_modify delay 0 every 1 check yes binsize 2.5
+boundary   p p p
+
+read_data ../../../input/vesicle_ds_N${N}_d0.80.data extra/atom/types 0
+
+# membrane bead size + density (matches solvent.lmp)
+set type 1 diameter 4.0
+variable my_volume  equal (4.0/3.0)*PI*((4.0*0.5)^3)
+variable my_density equal 1.0/${my_volume}
+set type 1 density ${my_density}
+
+# add solvent
+region out_vesicle sphere 0.0 0.0 0.0 ${radius} side out
+region in_vesicle  sphere 0.0 0.0 0.0 ${radius} side in
+create_atoms 2 random ${N_out} 4323 out_vesicle overlap 1.0 maxtry 50
+create_atoms 2 random ${N_in}  4324 in_vesicle  overlap 1.0 maxtry 50
+
+# solvent type 2: sigma=1 -> diameter=1, mass=1
+set type 2 diameter 1.0
+variable wat_volume  equal (4.0/3.0)*PI*(0.5)^3
+variable wat_density equal 1.0/${wat_volume}
+set type 2 density ${wat_density}
+set type 2 dipole 0.0 0.0 1.0
+
+# pair style for minimization (matches solvent.lmp)
+pair_style hybrid membrane_sillanov2 2.5 lj/cut 1.12
+pair_coeff 1 1 membrane_sillanov2 1.0 1.0 15.0 1.0 2.5 2.0 5 0.0
+pair_coeff 2 2 lj/cut 1.0 1.0 1.12
+pair_coeff 1 2 lj/cut 1.0 1.0 1.12
+
+# Short minimization to relax random-placement near-overlaps. Energy/force
+# tolerance is loose because we only need to remove the steep LJ wall hits;
+# subsequent MD will equilibrate the rest.
+thermo 100
+thermo_style custom step pe fnorm
+minimize 1.0e-4 1.0e-4 500 5000
+
+write_data ${out_file} nocoeff
+print "PREP_DONE: wrote ${out_file}"

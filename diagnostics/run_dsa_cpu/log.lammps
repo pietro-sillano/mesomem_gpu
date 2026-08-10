@@ -1,0 +1,21 @@
+LAMMPS (30 Mar 2026 - Development - patch_30Mar2026-1026-g5ea3b58ad8-modified)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread.
+  using 1 OpenMP thread(s) per MPI task
+# Diagnostic: check CPU vs GPU temperatures for atom_style dipole_sphere_angle.
+# Uses the small 8600-atom planar membrane (type 1 only, no polymer).
+# Checks that temp/sphere on GPU now gives ~T_target after the omega_thermostat fix.
+
+units lj
+atom_style dipole_sphere_angle
+boundary p p p
+neighbor 1.0 bin
+neigh_modify delay 0 every 1 check yes binsize 5
+
+read_data /martini/pietro/mesomem_gpu/planar_benchmark_89/input/lattice_d_0.85_N_10000_ds
+Reading data file ...
+  orthogonal box = (-36.7625 -36.863019 -36.7625) to (36.7625 36.863019 36.7625)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+ERROR: Incorrect format in Atoms section of data file: 1 1 1.000000 1.000000 1.000000 -36.762500 -36.863019 0.000000 0.000000 0.000000 1.000000
+For more information see https://docs.lammps.org/err0002 (src/atom.cpp:1110)
+Last input line: read_data /martini/pietro/mesomem_gpu/planar_benchmark_89/input/lattice_d_0.85_N_10000_ds

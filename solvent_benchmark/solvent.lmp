@@ -1,0 +1,57 @@
+# Spherical-vesicle + inside/outside solvent benchmark.
+# Reads a pre-prepared (membrane + solvent + minimized) data file produced by
+# `prepare_solvent.lmp`. The driver script makes sure that file exists.
+#
+# Required variables (from the bench driver):
+#   data_file   path to prepared data file (e.g. input/vesicle_ds_N5120_r18.4_d0.40.data)
+#   t_run       number of timesteps
+
+variable v_t_run    string ${t_run}
+variable v_data     string ${data_file}
+
+variable v_rcut    equal 2.5
+variable v_splay   equal 1.0
+variable v_tilt    equal 15.0
+variable v_wc      equal 2.0
+variable v_zeta    equal 5
+variable v_T_mem   equal 0.2
+variable v_dt      equal 0.01
+variable t_dump    equal 1000
+
+units      lj
+atom_style dipole_sphere_angle
+neighbor   1.0 bin
+neigh_modify delay 0 every 1 check yes binsize 5
+boundary   p p p
+
+
+read_data ../../${v_data}
+
+group membrane type 1
+group water    type 2
+
+# Computes (defined but kept out of thermo_style — chaining group-restricted
+# temp/sphere/kk and temp/kk into thermo triggers a double-free under /kk).
+compute T_mem membrane temp/sphere
+compute T_wat water    temp
+
+thermo_style custom step spcpu temp pe press
+thermo ${t_dump}
+
+pair_style hybrid membrane_sillanov2 ${v_rcut} lj/cut 1.12
+pair_coeff 1 1 membrane_sillanov2 1.0 1.0 ${v_tilt} ${v_splay} ${v_rcut} ${v_wc} ${v_zeta} 0.0
+pair_coeff 2 2 lj/cut 1.0 1.0 1.12
+pair_coeff 1 2 lj/cut 1.0 1.0 1.12
+
+timestep ${v_dt}
+
+# Integrators
+fix f_nve_mem membrane nve/sphere update dipole
+fix f_nve_wat water    nve/sphere
+
+# Single langevin on `all` — two fix_langevin/kk instances on disjoint groups
+# trigger a double-free in this Kokkos build. For a true two-temperature run
+# fall back to a CPU build; for benchmarking, single-T is fine.
+fix fLang all langevin ${v_T_mem} ${v_T_mem} 1.0 123 zero yes omega yes
+
+run ${v_t_run}

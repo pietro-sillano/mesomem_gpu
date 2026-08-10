@@ -1,0 +1,69 @@
+# mpirun -np 8 lmp_radial -i torus_edges.lmp -v R 5.0 -v h 20.0 -v kt 18
+variable t_dump equal 100
+# variable v_rcut string 2.5
+
+units           lj
+atom_style      full
+neighbor        0.5 bin
+neigh_modify    delay 0 every 1 check yes
+
+dimension       3
+boundary        p p p
+
+# read torus with planes equilibrated
+read_data       torus_R_8.0_h_20.0_eq.data
+
+# Compute commands
+compute         E_kin_trans all ke
+compute         E_pot all pe
+variable        E_tot equal c_E_pot+c_E_kin_trans
+
+compute        C_temp_baro all temp
+compute        C_press_baro all pressure C_temp_baro
+
+thermo_style    custom step spcpu cpuremain temp c_E_pot c_E_kin_trans v_E_tot press pxy
+thermo          ${t_dump}
+# Groups
+group           heads type 1
+group           tails type 2
+
+bond_style      fene
+bond_coeff      1 30.0 1.5 1.0 1.0
+
+angle_style     harmonic
+angle_coeff     1 5.0 180
+
+special_bonds   lj 0.0 1.0 1.0
+
+timestep        0.01
+#dump            coords all custom ${t_dump} position.lammpstrj id mol type xu yu zu
+
+# ── Step 2: Main minimization ────────────────────────────────────────────── #
+variable hydro_w equal 1.5
+variable two6 equal $(2^(1/6))
+variable hh_sigma equal $(0.95*v_two6)
+variable tt_sigma equal $(v_two6)
+variable tt_rc equal $(v_two6+v_hydro_w)
+
+# cosine/squared/kk has a memory bug in this LAMMPS build; force CPU pair eval
+suffix off
+pair_style      cosine/squared ${tt_rc}
+
+# 1 : head , 2 : tail
+pair_coeff      1 1 1. ${hh_sigma} ${hh_sigma} wca
+pair_coeff      1 2 1. ${hh_sigma} ${hh_sigma} wca
+pair_coeff      2 2 1. ${tt_sigma} ${tt_rc} wca
+suffix on
+
+minimize        1.0e-4 1.0e-6 100 20000
+
+
+fix             fLANG all langevin 1.0 1.0 1.0 78
+fix             f_NVE all nve
+
+run              100000
+#write_data      after_2M_steps.data
+#run             2000000
+#write_data      after_4M_steps.data
+#run             2000000
+#write_data      after_6M_steps.data
