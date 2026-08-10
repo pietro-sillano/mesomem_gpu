@@ -2,16 +2,18 @@
 
 GPU-accelerated LAMMPS (Kokkos/CUDA) simulations of dipole-sphere membrane
 models ("MesoMem"): planar membranes, vesicles, and vesicle + polymer +
-solvent systems. See [`Mesomem_gpu.md`](Mesomem_gpu.md) for the physics/
-performance best-practice guide and [`BENCHMARK_README.md`](BENCHMARK_README.md)
-for the benchmark suite.
+solvent systems.
 
-## What's essential for the GPU implementation
+- [`BUILDING.md`](BUILDING.md) — how to compile LAMMPS with this package (local / HPC)
+- [`BENCHMARKS.md`](BENCHMARKS.md) — the benchmark suite and GPU performance tuning
+- this file — what MesoMem is, and exactly what it changes in LAMMPS
 
-The GPU (Kokkos) build adds three custom LAMMPS components on top of stock
-LAMMPS. All of their source lives in [`cpp_files/`](cpp_files/) — this is
-the folder that matters if you're modifying the physics or porting it to a
-new LAMMPS version:
+## What MesoMem adds to LAMMPS
+
+The membrane model needs one custom atom style and one custom pair style,
+each with a CPU and a GPU (Kokkos) implementation. All of their source
+lives in [`cpp_files/`](cpp_files/) — this is the folder that matters if
+you're modifying the physics or porting it to a new LAMMPS version:
 
 | File(s) | What it is | LAMMPS package/location |
 |---|---|---|
@@ -19,78 +21,62 @@ new LAMMPS version:
 | `pair_membrane_sillano_v2_kokkos.{cpp,h}` | GPU pair style (`pair_style membrane_sillanov2/kk`) | `src/KOKKOS/` |
 | `atom_vec_dipole_sphere_angle.{cpp,h}` | CPU atom style (`atom_style dipole_sphere_angle`) — merges charge, dipole, sphere radius/mass, bonds, angles into one contiguous layout | `src/DIPOLE/` |
 | `atom_vec_dipole_sphere_angle_kokkos.{cpp,h}` | GPU atom style (`atom_style dipole_sphere_angle/kk`) | `src/KOKKOS/` |
-| `fix_langevin_kokkos.cpp` | Patched Kokkos Langevin thermostat (modifies the stock LAMMPS file) | `src/KOKKOS/` |
+| `fix_langevin_kokkos.cpp` | Patched Kokkos Langevin thermostat (overwrites the stock LAMMPS file) | `src/KOKKOS/` |
 
-Why a custom atom style: standard LAMMPS `hybrid` atom styles disable
-`comm device` (on-GPU halo exchange) because the data layout isn't
-guaranteed contiguous. `dipole_sphere_angle` stores everything in one
-Kokkos view so the whole simulation — including communication — can stay
-on the GPU. See [`Mesomem_gpu.md`](Mesomem_gpu.md) section 1 for details.
+`compile_local.sh`/`compile_hpc.sh` (see [`BUILDING.md`](BUILDING.md))
+fetch a vanilla LAMMPS source tree and copy these files into the package
+subfolders above, following LAMMPS's own layout convention so CMake's
+per-package glob picks them up automatically.
 
-Required upstream LAMMPS packages: `KOKKOS` (GPU), `DIPOLE`, `MOLECULE`
-(bond `fene`, angle `harmonic`/`cosine` used by the polymer/vesicle
-systems), `EXTRA-PAIR` (`pair_style cosine/squared`, used for the LJ
-solvent), `PYTHON` (Python API), plus MPI.
+### Why a custom atom style
 
-This repo does **not** ship a full LAMMPS source tree — the compile
-scripts fetch a pinned upstream LAMMPS commit (git SHA hardcoded in the
-script) and drop the files above into it, so the checked-in content stays
-small and always builds against the exact LAMMPS version the MesoMem
-KOKKOS code was written for.
+Standard LAMMPS `hybrid` atom styles disable `comm device` (on-GPU halo
+exchange) because the data layout isn't guaranteed contiguous across the
+combined properties. `dipole_sphere_angle` stores charge, dipole, sphere
+radius/mass, bonds, and angles in one contiguous Kokkos view, enabling:
 
-**Why a pinned commit, not `lammps-stable`:** the KOKKOS atom-style API
+- `comm device` (halo exchange entirely on GPU)
+- Kokkos device-side neighbour sorting
+- no forced host<->device transfers between force and communication steps
+
+#### Data file column order
+
+The `Atoms` section for `dipole_sphere_angle` uses a layout different from
+plain `dipole_sphere`:
+
+```
+id  type  x  y  z  molecule  diameter  density  q  mux  muy  muz
+```
+
+`data_atom_post` converts `diameter -> radius` and `(density, diameter) ->
+rmass` at read time, so the data file itself stores physical diameter and
+density.
+
+### Required upstream LAMMPS packages
+
+`KOKKOS` (GPU), `DIPOLE`, `MOLECULE` (bond `fene`, angle
+`harmonic`/`cosine`, used by the polymer/vesicle systems), `EXTRA-PAIR`
+(`pair_style cosine/squared`, used for the LJ solvent), `PYTHON` (Python
+API), plus MPI.
+
+### Why a pinned LAMMPS commit, not `lammps-stable`
+
+This repo does **not** ship a full LAMMPS source tree — the build scripts
+fetch a pinned upstream LAMMPS commit (git SHA hardcoded in the scripts)
+instead of the `lammps-stable` release. The Kokkos atom-style API
 (`AtomVecKokkos::sync`/`modified`/`sync_pinned`) changed after the last
-stable LAMMPS release, so building against `lammps-stable.tar.gz` fails.
-The scripts `git fetch --depth 1` a specific known-good `develop`-branch
-commit instead.
-
-## Building
-
-Two standalone scripts, no arguments needed — each builds LAMMPS with
-Kokkos/CUDA, MPI, and the Python API:
-
-```bash
-# Local machine (auto-detects your GPU architecture via nvidia-smi)
-./compile_local.sh
-
-# HPC cluster (module-based toolchain; run inside an interactive/batch
-# GPU job, e.g. `srun --partition=gpu --gpus=1 --pty bash` on Snellius)
-./compile_hpc.sh
-```
-
-`compile_hpc.sh` has the module names and GPU architecture (default:
-`AMPERE80` for Snellius A100 nodes) set as plain variables near the top of
-the file — edit them if you're building on a different cluster.
-
-Each script is self-contained under `_build/local/` or `_build/hpc/`:
-
-- `_build/<local|hpc>/lammps-src/` — fetched LAMMPS source (+ MesoMem files copied in)
-- `_build/<local|hpc>/install/` — installed `lmp` binary + `liblammps.so`
-- `_build/<local|hpc>/venv/` — Python virtualenv with the `lammps` Python module installed
-- `_build/<local|hpc>/env.sh` — source this to put `lmp` and `liblammps.so` on your PATH/LD_LIBRARY_PATH
-
-Both scripts finish with a smoke test that loads `atom_style
-dipole_sphere_angle` and `pair_style membrane_sillanov2` through the
-Python API and prints `OK: ...` on success.
-
-To use a finished build later:
-
-```bash
-source _build/local/env.sh
-source _build/local/venv/bin/activate
-lmp -k on g 1 -sf kk -pk kokkos newton on neigh half comm device -in your_script.lmp
-```
+stable LAMMPS release, so building `atom_vec_dipole_sphere_angle_kokkos`
+against `lammps-stable.tar.gz` fails to compile. The scripts `git fetch
+--depth 1` a specific known-good `develop`-branch commit instead, so the
+checked-in content stays small while always building against the exact
+LAMMPS version this KOKKOS code was written for.
 
 ## Repository layout
 
 - `cpp_files/` — custom MesoMem C++ sources (see table above)
-- `compile_local.sh`, `compile_hpc.sh` — build scripts (these are what you run)
-- `Mesomem_gpu.md` — physics + Kokkos performance best-practice guide
-- `BENCHMARK_README.md` — benchmark suite usage
-- `planar_benchmark/`, `polymer/`, `solvent_benchmark/`, `polymer_solvent/`,
-  `deserno_gpu/` — per-system input scripts and `benchmark.py` sweep drivers
-- `diagnostics/` — small standalone correctness checks (angle/sphere/dsa styles)
-- `plots/`, `plot_bench.py` — benchmark plotting
+- `compile_local.sh`, `compile_hpc.sh` — build scripts, see [`BUILDING.md`](BUILDING.md)
+- `benchmarks/` — per-system input scripts, `benchmark.py` sweep drivers, and plots; see [`BENCHMARKS.md`](BENCHMARKS.md)
+- `diagnostics/` — small standalone correctness checks (angle/sphere/dsa atom and pair styles, CPU vs GPU)
 - `lammps/` — a local, already-patched LAMMPS checkout used for day-to-day
   development on this machine (not tracked in git — see `.gitignore`;
   reproduce it anywhere with `compile_local.sh`)
