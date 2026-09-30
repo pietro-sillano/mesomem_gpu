@@ -23,7 +23,10 @@ variable v_dt      equal 0.01
 variable t_dump    equal 5000
 
 units      lj
-atom_style dipole_sphere_angle
+# "hybrid angle sphere dipole" (default) or the custom "dipole_sphere_angle"
+# (same data file columns; only the custom style supports Kokkos device sorting)
+variable atomstyle index "hybrid angle sphere dipole"
+atom_style      ${atomstyle}
 neighbor   1.0 bin
 neigh_modify delay 0 every 1 check yes binsize 5
 boundary   p p p
@@ -45,8 +48,8 @@ thermo ${t_dump}
 
 
 # ---- Pair potentials ----
-pair_style hybrid mesomem ${v_rcut} lj/cut 1.12246152962189
-pair_coeff 1 1 mesomem 1.0 1.0 ${v_tilt} ${v_splay} ${v_rcut} ${v_wc} ${v_zeta} 0.0
+pair_style hybrid mesomem/dipole ${v_rcut} lj/cut 1.12246152962189
+pair_coeff 1 1 mesomem/dipole 1.0 1.0 ${v_tilt} ${v_splay} ${v_rcut} ${v_wc} ${v_zeta} 0.0
 pair_coeff 2 2 lj/cut 1.0 1.0 1.12246152962189
 pair_coeff 1 2 lj/cut 1.0 1.0 1.12246152962189
 

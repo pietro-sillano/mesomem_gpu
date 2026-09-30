@@ -10,47 +10,64 @@ solvent systems.
 
 ## What MesoMem adds to LAMMPS
 
-The membrane model needs one custom atom style and one custom pair style,
-each with a CPU and a GPU (Kokkos) implementation. All of their source
-lives in [`cpp_files/`](cpp_files/) — this is the folder that matters if
-you're modifying the physics or porting it to a new LAMMPS version:
+The CPU pair style `pair_style mesomem/dipole` (DIPOLE package,
+`src/DIPOLE/pair_mesomem_dipole.{cpp,h}`, documented in
+`doc/src/pair_mesomem_dipole.rst`) is being contributed to LAMMPS itself and
+lives in the [pietro-sillano/lammps](https://github.com/pietro-sillano/lammps)
+fork, which the build scripts check out. This repository adds the GPU
+(Kokkos) version of that pair style plus an optional custom atom style. All
+of their source lives in [`cpp_files/`](cpp_files/) -- this is the folder
+that matters if you're modifying the physics or porting it to a new LAMMPS
+version:
 
 | File(s) | What it is | LAMMPS package/location |
 |---|---|---|
-| `pair_mesomem.{cpp,h}` | CPU reference pair style (`pair_style mesomem`) | `src/` (core) |
-| `pair_mesomem_kokkos.{cpp,h}` | GPU pair style (`pair_style mesomem/kk`) | `src/KOKKOS/` |
-| `atom_vec_dipole_sphere_angle.{cpp,h}` | CPU atom style (`atom_style dipole_sphere_angle`) — merges charge, dipole, sphere radius/mass, bonds, angles into one contiguous layout | `src/DIPOLE/` |
-| `atom_vec_dipole_sphere_angle_kokkos.{cpp,h}` | GPU atom style (`atom_style dipole_sphere_angle/kk`) | `src/KOKKOS/` |
-| `fix_langevin_kokkos.cpp` | Patched Kokkos Langevin thermostat (overwrites the stock LAMMPS file) | `src/KOKKOS/` |
+| `pair_mesomem_dipole_kokkos.{cpp,h}` | GPU pair style (`pair_style mesomem/dipole/kk`), a Kokkos port of `pair_mesomem_dipole.cpp` with identical physics | `src/KOKKOS/` |
+| `atom_vec_dipole_sphere_angle.{cpp,h}` | Optional CPU atom style (`atom_style dipole_sphere_angle`) -- merges charge, dipole, sphere radius/mass, bonds, angles into one atom style | `src/DIPOLE/` |
+| `atom_vec_dipole_sphere_angle_kokkos.{cpp,h}` | Optional GPU atom style (`atom_style dipole_sphere_angle/kk`) | `src/KOKKOS/` |
 
 `compile_local.sh`/`compile_hpc.sh` (see [`BUILDING.md`](BUILDING.md))
-fetch a vanilla LAMMPS source tree and copy these files into the package
+fetch the pinned LAMMPS fork and copy these files into the package
 subfolders above, following LAMMPS's own layout convention so CMake's
 per-package glob picks them up automatically.
 
-### Why a custom atom style
+Any change to the physics must be made in both `pair_mesomem_dipole.cpp`
+(fork) and `pair_mesomem_dipole_kokkos.cpp` (here); the Kokkos kernel
+follows the CPU `compute()` step by step (same section labels A-G).
 
-Standard LAMMPS `hybrid` atom styles disable `comm device` (on-GPU halo
-exchange) because the data layout isn't guaranteed contiguous across the
-combined properties. `dipole_sphere_angle` stores charge, dipole, sphere
-radius/mass, bonds, and angles in one contiguous Kokkos view, enabling:
+### Atom style: hybrid (default) or custom
 
-- `comm device` (halo exchange entirely on GPU)
-- Kokkos device-side neighbour sorting
-- no forced host<->device transfers between force and communication steps
+The pair style needs per-atom dipole (orientation), torque, and finite-size
+sphere data; the polymer/vesicle systems also need bonds and angles. Two
+atom styles provide this, with the **same** `Atoms` column layout, so every
+data file works with both:
+
+- `atom_style hybrid angle sphere dipole` -- **default** in all input
+  scripts. Recent LAMMPS Kokkos handles hybrid atom styles on the GPU,
+  including `comm device` (halo exchange entirely on the GPU). Only Kokkos
+  atom *sorting* is not yet supported on the device for hybrid styles:
+  LAMMPS prints a warning and sorts on the host instead.
+- `atom_style dipole_sphere_angle` -- custom single (non-hybrid) atom style
+  from `cpp_files/`. It additionally enables Kokkos device-side sorting.
+  Select it in any benchmark script with `-var atomstyle dipole_sphere_angle`.
+
+Earlier LAMMPS versions also forced `comm host` for hybrid atom styles,
+which is why the custom style was originally required; that is no longer
+the case, and the stock Kokkos `fix langevin` now thermostats rotations
+(`omega yes`) on the GPU, so the patched `fix_langevin_kokkos.cpp` that
+used to live here has been removed.
 
 #### Data file column order
 
-The `Atoms` section for `dipole_sphere_angle` uses a layout different from
-plain `dipole_sphere`:
+The `Atoms` section of both `hybrid angle sphere dipole` (in exactly this
+sub-style order) and `dipole_sphere_angle` is:
 
 ```
 id  type  x  y  z  molecule  diameter  density  q  mux  muy  muz
 ```
 
-`data_atom_post` converts `diameter -> radius` and `(density, diameter) ->
-rmass` at read time, so the data file itself stores physical diameter and
-density.
+For both atom styles the Atoms section reads the physical diameter and
+density; LAMMPS converts them to radius and per-atom mass at read time.
 
 ### Required upstream LAMMPS packages
 
@@ -61,15 +78,25 @@ API), plus MPI.
 
 ### Why a pinned LAMMPS commit, not `lammps-stable`
 
-This repo does **not** ship a full LAMMPS source tree — the build scripts
-fetch a pinned upstream LAMMPS commit (git SHA hardcoded in the scripts)
-instead of the `lammps-stable` release. The Kokkos atom-style API
-(`AtomVecKokkos::sync`/`modified`/`sync_pinned`) changed after the last
-stable LAMMPS release, so building `atom_vec_dipole_sphere_angle_kokkos`
-against `lammps-stable.tar.gz` fails to compile. The scripts `git fetch
---depth 1` a specific known-good `develop`-branch commit instead, so the
-checked-in content stays small while always building against the exact
-LAMMPS version this KOKKOS code was written for.
+This repo does **not** ship a full LAMMPS source tree -- the build scripts
+`git fetch --depth 1` a pinned commit (git SHA hardcoded in the scripts) of
+the [pietro-sillano/lammps](https://github.com/pietro-sillano/lammps) fork's
+`develop` branch. That commit contains the reviewed `pair_style
+mesomem/dipole` and the current Kokkos API the files in `cpp_files/` are
+written against (the `lammps-stable` release predates both). Once
+`mesomem/dipole` is merged into official LAMMPS, the pin can move to an
+upstream `lammps/lammps` commit.
+
+### Changes relative to the old `pair_style mesomem`
+
+`mesomem/dipole` is the renamed, reviewed version of the former `mesomem`
+style; `pair_coeff` takes the same 8 coefficients. Compared with the old
+`pair_mesomem*.cpp` files it fixes the sign of the radial force coming
+from the C0 term of the tilt energy and the sign of the splay torque (both
+now equal the exact derivatives of the energy), skips the tilt/splay terms
+for particles with a zero dipole, and accepts non-integer `zeta` on the GPU
+too. The benchmark CSVs and plots in `benchmarks/` were produced with the
+old `mesomem` style.
 
 ## Repository layout
 

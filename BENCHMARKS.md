@@ -210,7 +210,7 @@ lmp -in simulation.lmp \
 | `-sf kk` | Kokkos suffix | Automatically maps all styles to their `kk` variants |
 | `newton on` | Newton's 3rd law | Reduces force evaluations by ~2x; works with `neigh half` |
 | `neigh half` | Half neighbour list | Combined with `newton on` this is always the best option |
-| `comm device` | On-device halo | Avoids PCIe round-trips; requires the monolithic `dipole_sphere_angle` atom style (no hybrid) |
+| `comm device` | On-device halo | Avoids PCIe round-trips; works with both `hybrid angle sphere dipole` and `dipole_sphere_angle` |
 
 ### Half vs full neighbour list
 
@@ -285,9 +285,13 @@ Best configurations per N:
 ```
 
 `comm=device` and `sort=device` matter the most — moving everything to
-device is the biggest win, which is why hybrid pair styles (which force
-host-side data) are noticeably slower. `neigh full` + `newton off` can win
-for smaller systems.
+device is the biggest win. Device sorting requires the custom
+`dipole_sphere_angle` atom style (`-var atomstyle dipole_sphere_angle`);
+with the default `hybrid angle sphere dipole` style LAMMPS falls back to
+host sorting. `neigh full` + `newton off` can win for smaller systems.
+
+These sweeps were measured with the old `mesomem` pair style and the
+custom atom style, before the switch to `mesomem/dipole`.
 
 ## Timing and profiling
 
@@ -313,7 +317,7 @@ This forces a CPU-GPU sync at each timer boundary. Use only for profiling
 | Section | What to look for |
 |---------|-----------------|
 | `Pair` | Should dominate; expected ~60-80% for membrane systems |
-| `Comm` | With `comm device` this should be < 10%; if > 20% suspect a hybrid style or missing `comm device` |
+| `Comm` | With `comm device` this should be < 10%; if > 20% suspect a missing `comm device` |
 | `Neigh` | Occasional spike is normal (every ~5 steps); sustained high value -> increase skin or `binsize` |
 | `Other` | Includes I/O and thermo; keep dump frequency low during benchmarks |
 
@@ -321,8 +325,8 @@ This forces a CPU-GPU sync at each timer boundary. Use only for profiling
 
 Dump trajectories are automatically recognized. For the polymer/solvent
 data files, pick the LAMMPS "hybrid angle sphere dipole" atom style when
-prompted (the `dipole_sphere_angle` atom style isn't natively known to
-OVITO).
+prompted (same columns as the custom `dipole_sphere_angle` style, which
+OVITO does not know).
 
 ## Kokkos resources
 

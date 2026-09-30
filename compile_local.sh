@@ -30,12 +30,12 @@ done
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-LAMMPS_GIT_URL="https://github.com/lammps/lammps.git"
-# Pinned LAMMPS commit (develop branch, "30 Mar 2026" snapshot) that the
-# custom KOKKOS files in cpp_files/ are known to compile against. The
-# stable/*.tar.gz release is NOT compatible: AtomVecKokkos's sync/modified
-# API changed (uint64_t masks, sync_pinned) after the last stable tag.
-LAMMPS_REF="5ea3b58ad8d72ddc1b50c102033578181d34bbbd"
+LAMMPS_GIT_URL="https://github.com/pietro-sillano/lammps.git"
+# Pinned commit of the pietro-sillano/lammps fork (develop branch). It carries
+# the reviewed CPU pair style mesomem/dipole (src/DIPOLE/pair_mesomem_dipole.*)
+# on top of a recent LAMMPS develop, which the Kokkos sources in cpp_files/
+# are written against. The stable/*.tar.gz releases are NOT compatible.
+LAMMPS_REF="d585fbed4b93af69ddefd481ef6a3c6a6e32f6fd"
 
 BUILD_ROOT="$SCRIPT_DIR/_build/local"
 SRC_DIR="$BUILD_ROOT/lammps-src"
@@ -83,7 +83,10 @@ echo
 # --------------------------------------------------------------------------
 # Step 1: fetch the pinned LAMMPS source tree (skipped if already present)
 # --------------------------------------------------------------------------
-if [[ "$FORCE" == "no" && -d "$SRC_DIR/.git" ]]; then
+# an existing tree is only reused if it is at the pinned commit, so a stale
+# tree (e.g. with files from an older cpp_files/ layout) is never built
+SRC_HEAD="$(git -C "$SRC_DIR" rev-parse HEAD 2>/dev/null || true)"
+if [[ "$FORCE" == "no" && "$SRC_HEAD" == "$LAMMPS_REF" ]]; then
   echo "-- reusing existing LAMMPS source at $SRC_DIR (pass --force to refetch from scratch) --"
 else
   echo "-- fetching LAMMPS ($LAMMPS_REF) --"
@@ -103,19 +106,16 @@ fi
 # picks them up.
 # --------------------------------------------------------------------------
 echo "-- installing MesoMem custom source files --"
-cp "$SCRIPT_DIR"/cpp_files/pair_mesomem.cpp \
-   "$SCRIPT_DIR"/cpp_files/pair_mesomem.h \
-   "$SRC_DIR/src/"
-
+# the CPU pair style mesomem/dipole is part of the pinned LAMMPS fork;
+# only the Kokkos pair style and the optional custom atom style are added.
 cp "$SCRIPT_DIR"/cpp_files/atom_vec_dipole_sphere_angle.cpp \
    "$SCRIPT_DIR"/cpp_files/atom_vec_dipole_sphere_angle.h \
    "$SRC_DIR/src/DIPOLE/"
 
 cp "$SCRIPT_DIR"/cpp_files/atom_vec_dipole_sphere_angle_kokkos.cpp \
    "$SCRIPT_DIR"/cpp_files/atom_vec_dipole_sphere_angle_kokkos.h \
-   "$SCRIPT_DIR"/cpp_files/pair_mesomem_kokkos.cpp \
-   "$SCRIPT_DIR"/cpp_files/pair_mesomem_kokkos.h \
-   "$SCRIPT_DIR"/cpp_files/fix_langevin_kokkos.cpp \
+   "$SCRIPT_DIR"/cpp_files/pair_mesomem_dipole_kokkos.cpp \
+   "$SCRIPT_DIR"/cpp_files/pair_mesomem_dipole_kokkos.h \
    "$SRC_DIR/src/KOKKOS/"
 
 # --------------------------------------------------------------------------
@@ -193,9 +193,13 @@ python3 -c "
 from lammps import lammps
 lmp = lammps()
 lmp.command('units lj')
-lmp.command('atom_style dipole_sphere_angle')
-lmp.command('pair_style mesomem 2.5')
-print('OK: mesomem atom_style + pair_style loaded through the Python API')
+lmp.command('atom_style hybrid angle sphere dipole')
+lmp.command('pair_style mesomem/dipole 2.5')
+for cat, name in [('atom', 'dipole_sphere_angle'), ('atom', 'dipole_sphere_angle/kk'),
+                  ('pair', 'mesomem/dipole/kk')]:
+    if not lmp.has_style(cat, name):
+        raise SystemExit(f'ERROR: {cat} style {name} missing from the build')
+print('OK: mesomem/dipole(/kk) and the atom styles are available through the Python API')
 "
 
 deactivate

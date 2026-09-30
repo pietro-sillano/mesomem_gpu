@@ -3,7 +3,7 @@
 Two standalone scripts — each builds LAMMPS with Kokkos/CUDA, MPI, and the
 Python API against the custom MesoMem sources in [`cpp_files/`](cpp_files/).
 See [`README.md`](README.md) for what those sources are and why a pinned
-LAMMPS commit is required.
+commit of the pietro-sillano/lammps fork is required.
 
 ```bash
 # Local machine (auto-detects your GPU architecture via nvidia-smi)
@@ -19,8 +19,8 @@ LAMMPS commit is required.
 `AMPERE80` for Snellius A100 nodes) set as plain variables near the top of
 the file — edit them if you're building on a different cluster.
 
-If `_build/<local|hpc>/lammps-src` already exists from a previous run,
-re-running either script skips the LAMMPS fetch and just does an
+If `_build/<local|hpc>/lammps-src` already exists from a previous run and
+is at the pinned commit, re-running either script skips the LAMMPS fetch and just does an
 incremental rebuild (the custom `cpp_files/` sources are always re-copied
 first, so local edits are picked up). Pass `--force` to wipe it and fetch
 + build from scratch:
@@ -35,16 +35,19 @@ first, so local edits are picked up). Pass `--force` to wipe it and fetch
 1. Checks prerequisites (`cmake`, `mpicc`, `python3`, `nvcc`) and picks a
    Kokkos GPU architecture (auto-detected locally via `nvidia-smi`,
    hardcoded for HPC).
-2. Fetches the pinned LAMMPS commit with a shallow `git fetch`.
+2. Fetches the pinned commit of the pietro-sillano/lammps fork (which
+   contains `pair_style mesomem/dipole`) with a shallow `git fetch`;
+   an existing source tree at a different commit is refetched.
 3. Copies the custom MesoMem source files from `cpp_files/` into the right
-   package subfolders (`src/`, `src/DIPOLE/`, `src/KOKKOS/`).
+   package subfolders (`src/DIPOLE/`, `src/KOKKOS/`).
 4. Configures with CMake (`PKG_KOKKOS` + CUDA, `PKG_DIPOLE`,
    `PKG_MOLECULE`, `PKG_EXTRA-PAIR`, `PKG_PYTHON`, MPI, shared libs) and
    builds + installs.
 5. Creates a Python virtualenv and installs the LAMMPS Python bindings
    into it via `python/install.py`.
-6. Runs a smoke test that loads `atom_style dipole_sphere_angle` and
-   `pair_style mesomem` through the Python API and prints
+6. Runs a smoke test that loads `atom_style hybrid angle sphere dipole` and
+   `pair_style mesomem/dipole` through the Python API, checks that
+   `mesomem/dipole/kk` and `dipole_sphere_angle(/kk)` were built, and prints
    `OK: ...` on success.
 
 ## Output layout
@@ -70,8 +73,8 @@ or from Python:
 ```python
 from lammps import lammps
 lmp = lammps()
-lmp.command('atom_style dipole_sphere_angle')
-lmp.command('pair_style mesomem 2.5')
+lmp.command('atom_style hybrid angle sphere dipole')
+lmp.command('pair_style mesomem/dipole 2.5')
 ```
 
 See [`BENCHMARKS.md`](BENCHMARKS.md) for the canonical GPU run command and

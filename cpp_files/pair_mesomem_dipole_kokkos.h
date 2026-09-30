@@ -11,61 +11,52 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-// Contributing author: Pietro Sillano (TU Delft), 2026
-// Kokkos port of pair_mesomem
+// Contributing author: Pietro Sillano, 2026
 
 #ifdef PAIR_CLASS
 // clang-format off
-PairStyle(mesomem/kk,        PairMesomemKokkos<LMPDeviceType>);
-PairStyle(mesomem/kk/device, PairMesomemKokkos<LMPDeviceType>);
-PairStyle(mesomem/kk/host,   PairMesomemKokkos<LMPHostType>);
+PairStyle(mesomem/dipole/kk,PairMesomemDipoleKokkos<LMPDeviceType>);
+PairStyle(mesomem/dipole/kk/device,PairMesomemDipoleKokkos<LMPDeviceType>);
+PairStyle(mesomem/dipole/kk/host,PairMesomemDipoleKokkos<LMPHostType>);
 // clang-format on
 #else
 
 // clang-format off
-#ifndef LMP_PAIR_MESOMEM_KOKKOS_H
-#define LMP_PAIR_MESOMEM_KOKKOS_H
+#ifndef LMP_PAIR_MESOMEM_DIPOLE_KOKKOS_H
+#define LMP_PAIR_MESOMEM_DIPOLE_KOKKOS_H
 
 #include "pair_kokkos.h"
-#include "pair_mesomem.h"
+#include "pair_mesomem_dipole.h"
 #include "neigh_list_kokkos.h"
 
 namespace LAMMPS_NS {
 
-struct params_mesomem {
+struct params_mesomem_dipole {
   KOKKOS_INLINE_FUNCTION
-  params_mesomem()
-      : cutsq(0.0), sigma(0.0), eps(0.0), ktilt(0.0), ksplay(0.0),
-        wc(0.0), c0(0.0), zeta_int(0) {}
+  params_mesomem_dipole() :
+    cut(0), sigma(0), eps(0), ktilt(0), ksplay(0), wc(0), zeta(0), c0(0), zeta_int(-1) {}
   KOKKOS_INLINE_FUNCTION
-  params_mesomem(int /*dummy*/)
-      : cutsq(0.0), sigma(0.0), eps(0.0), ktilt(0.0), ksplay(0.0),
-        wc(0.0), c0(0.0), zeta_int(0) {}
+  params_mesomem_dipole(int /*i*/) :
+    cut(0), sigma(0), eps(0), ktilt(0), ksplay(0), wc(0), zeta(0), c0(0), zeta_int(-1) {}
 
-  KK_FLOAT cutsq;
-  KK_FLOAT sigma;
-  KK_FLOAT eps;
-  KK_FLOAT ktilt;
-  KK_FLOAT ksplay;
-  KK_FLOAT wc;         // weight_rcut
-  KK_FLOAT c0;         // spontaneous curvature
-  int     zeta_int;   // zeta rounded to nearest integer (hot-loop uses integer pow)
+  KK_FLOAT cut, sigma, eps, ktilt, ksplay, wc, zeta, c0;
+  int zeta_int;    // zeta as integer if it is one (fast path), -1 otherwise
 };
 
 template<int NEIGHFLAG, int NEWTON_PAIR, int EVFLAG, bool STACKPARAMS>
-struct TagPairMesomem {};
+struct TagPairMesomemDipole {};
 
 template<class DeviceType>
-class PairMesomemKokkos : public PairMesomem {
+class PairMesomemDipoleKokkos : public PairMesomemDipole {
  public:
-  enum { EnabledNeighFlags = FULL | HALFTHREAD | HALF };
-  enum { COUL_FLAG = 0 };
+  enum {EnabledNeighFlags=FULL|HALFTHREAD|HALF};
+  enum {COUL_FLAG=0};
   typedef DeviceType device_type;
   typedef ArrayTypes<DeviceType> AT;
   typedef EV_FLOAT value_type;
 
-  PairMesomemKokkos(class LAMMPS *);
-  ~PairMesomemKokkos() override;
+  PairMesomemDipoleKokkos(class LAMMPS *);
+  ~PairMesomemDipoleKokkos() override;
 
   void compute(int, int) override;
 
@@ -74,12 +65,12 @@ class PairMesomemKokkos : public PairMesomem {
 
   template<int NEIGHFLAG, int NEWTON_PAIR, int EVFLAG, bool STACKPARAMS>
   KOKKOS_INLINE_FUNCTION
-  void operator()(TagPairMesomem<NEIGHFLAG,NEWTON_PAIR,EVFLAG,STACKPARAMS>,
+  void operator()(TagPairMesomemDipole<NEIGHFLAG,NEWTON_PAIR,EVFLAG,STACKPARAMS>,
                   const int, EV_FLOAT &ev) const;
 
   template<int NEIGHFLAG, int NEWTON_PAIR, int EVFLAG, bool STACKPARAMS>
   KOKKOS_INLINE_FUNCTION
-  void operator()(TagPairMesomem<NEIGHFLAG,NEWTON_PAIR,EVFLAG,STACKPARAMS>,
+  void operator()(TagPairMesomemDipole<NEIGHFLAG,NEWTON_PAIR,EVFLAG,STACKPARAMS>,
                   const int) const;
 
   template<int NEIGHFLAG, int NEWTON_PAIR>
@@ -92,11 +83,11 @@ class PairMesomemKokkos : public PairMesomem {
   int sbmask(const int& j) const;
 
  protected:
-  Kokkos::DualView<params_mesomem**, Kokkos::LayoutRight, DeviceType> k_params;
-  typename Kokkos::DualView<params_mesomem**,
-      Kokkos::LayoutRight, DeviceType>::t_dev_const_um params;
-  // stack-resident params for small ntypes (fast path)
-  params_mesomem m_params[MAX_TYPES_STACKPARAMS+1][MAX_TYPES_STACKPARAMS+1];
+  Kokkos::DualView<params_mesomem_dipole**,Kokkos::LayoutRight,DeviceType> k_params;
+  typename Kokkos::DualView<params_mesomem_dipole**,
+    Kokkos::LayoutRight,DeviceType>::t_dev_const_um params;
+  // hardwired to space for MAX_TYPES_STACKPARAMS atom types
+  params_mesomem_dipole m_params[MAX_TYPES_STACKPARAMS+1][MAX_TYPES_STACKPARAMS+1];
   KK_FLOAT m_cutsq[MAX_TYPES_STACKPARAMS+1][MAX_TYPES_STACKPARAMS+1];
 
   typename AT::t_kkfloat_1d_3_lr_randomread x;
@@ -113,18 +104,17 @@ class PairMesomemKokkos : public PairMesomem {
   DAT::ttransform_kkfloat_2d k_cutsq;
   typename AT::t_kkfloat_2d d_cutsq;
 
-  int neighflag, newton_pair;
-  int nlocal, nall, eflag, vflag;
+  int neighflag,newton_pair;
+  int nlocal,nall,eflag,vflag;
 
-  double special_lj[4];
+  KK_FLOAT special_lj[4];
 
   typename AT::t_neighbors_2d d_neighbors;
   typename AT::t_int_1d_randomread d_ilist;
   typename AT::t_int_1d_randomread d_numneigh;
 
   void allocate() override;
-  friend void pair_virial_fdotr_compute<PairMesomemKokkos>(
-      PairMesomemKokkos*);
+  friend void pair_virial_fdotr_compute<PairMesomemDipoleKokkos>(PairMesomemDipoleKokkos*);
 };
 
 }
