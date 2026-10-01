@@ -95,6 +95,7 @@ def run_gpu(args, n, omp, lmp_input, hw_info):
 
     cmd  = [args.lmp_bin, "-in", lmp_input]
     cmd += ["-v", "N", str(n), "-v", "t_run", str(args.steps_gpu)]
+    cmd += ["-v", "atomstyle", args.atomstyle]
     cmd += ["-k", "on", "g", "1", "t", str(omp), "-sf", "kk"]
     cmd += ["-pk", "kokkos", "newton", newton, "neigh", args.neigh, "comm", "device"]
 
@@ -158,6 +159,8 @@ def main():
     parser.add_argument("--n_list",    type=int, nargs="+",
                         default=[2500, 10000, 102400],
                         help="System sizes (must match files in input/)")
+    parser.add_argument("--atomstyle", default="hybrid angle sphere dipole",
+                        help="atom style for the GPU test (dipole_sphere_angle enables device sorting)")
     parser.add_argument("--replicas",  type=int, default=3)
     parser.add_argument("--test_gpu",  action="store_true")
     parser.add_argument("--hwthread",  action="store_true")

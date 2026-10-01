@@ -1,7 +1,7 @@
 # Building
 
-Two standalone scripts — each builds LAMMPS with Kokkos/CUDA, MPI, and the
-Python API against the custom MesoMem sources in [`cpp_files/`](cpp_files/).
+Two standalone scripts — each builds LAMMPS with Kokkos (CUDA + OpenMP),
+MPI, and the Python API against the custom MesoMem sources in [`cpp_files/`](cpp_files/).
 See [`README.md`](README.md) for what those sources are and why a pinned
 commit of the pietro-sillano/lammps fork is required.
 
@@ -19,6 +19,35 @@ commit of the pietro-sillano/lammps fork is required.
 `AMPERE80` for Snellius A100 nodes) set as plain variables near the top of
 the file — edit them if you're building on a different cluster.
 
+## Build settings
+
+Both scripts have these plain variables near the top of the file
+(`compile_local.sh` also accepts them from the environment, e.g.
+`KOKKOS_PREC=mixed ./compile_local.sh`):
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `KOKKOS_PREC` | `double` | Kokkos precision: `double`, `mixed` (float math, double accumulation) or `single` |
+| `CUSTOM_ATOM_STYLE` | `no` | `yes` also builds the optional `dipole_sphere_angle(/kk)` atom style (only needed for Kokkos device sorting, which gives no speedup, see [`BENCHMARKS.md`](BENCHMARKS.md#host-vs-device-sorting)) |
+| `JOBS` (local only) | `8` | parallel compile jobs |
+
+Kokkos is always built with the CUDA backend (GPU) plus the OpenMP backend
+(host threads, `-k on g 1 t N`). The default local build goes to
+`_build/local/`; a non-default `KOKKOS_PREC` goes to its own folder
+`_build/local-<prec>/` (e.g. `_build/local-mixed/`), so several builds can
+coexist.
+
+## Build + benchmark in one go
+
+[`build_and_bench.sh`](build_and_bench.sh) runs `compile_local.sh` with the
+default settings for the GPU of the machine it runs on, then the planar,
+solvent, polymer and polymer_solvent benchmarks, writing
+`benchmarks/*/results_<hostname>.csv`:
+
+```bash
+./build_and_bench.sh
+```
+
 If `_build/<local|hpc>/lammps-src` already exists from a previous run and
 is at the pinned commit, re-running either script skips the LAMMPS fetch and just does an
 incremental rebuild (the custom `cpp_files/` sources are always re-copied
@@ -32,23 +61,31 @@ first, so local edits are picked up). Pass `--force` to wipe it and fetch
 
 ## What each script does
 
-1. Checks prerequisites (`cmake`, `mpicc`, `python3`, `nvcc`) and picks a
-   Kokkos GPU architecture (auto-detected locally via `nvidia-smi`,
-   hardcoded for HPC).
+1. Checks prerequisites (`cmake`, `mpicc`, `python3`, and `nvcc` for GPU
+   builds) and picks a Kokkos GPU architecture (auto-detected locally via
+   `nvidia-smi`, hardcoded for HPC).
 2. Fetches the pinned commit of the pietro-sillano/lammps fork (which
    contains `pair_style mesomem/dipole`) with a shallow `git fetch`;
-   an existing source tree at a different commit is refetched.
-3. Copies the custom MesoMem source files from `cpp_files/` into the right
-   package subfolders (`src/DIPOLE/`, `src/KOKKOS/`).
-4. Configures with CMake (`PKG_KOKKOS` + CUDA, `PKG_DIPOLE`,
-   `PKG_MOLECULE`, `PKG_EXTRA-PAIR`, `PKG_PYTHON`, MPI, shared libs) and
-   builds + installs.
+   an existing source tree at a different commit is refetched. It also
+   patches Kokkos' `nvcc_wrapper` in that tree: as shipped, it does not
+   strip the quotes from CMake's `@objects1.rsp` response file and linking
+   `liblammps.so` fails with "cannot specify '-o' with '-c' ... with
+   multiple files".
+3. Copies the Kokkos pair style from `cpp_files/` into `src/KOKKOS/` (plus
+   the custom atom style into `src/DIPOLE/` and `src/KOKKOS/` if
+   `CUSTOM_ATOM_STYLE=yes`).
+4. Configures with CMake (`PKG_KOKKOS` + CUDA and OpenMP backends,
+   `KOKKOS_PREC`, `PKG_DIPOLE`, `PKG_MOLECULE`, `PKG_EXTRA-PAIR`,
+   `PKG_PYTHON`, MPI, OpenMP, shared libs) and builds + installs.
 5. Creates a Python virtualenv and installs the LAMMPS Python bindings
    into it via `python/install.py`.
-6. Runs a smoke test that loads `atom_style hybrid angle sphere dipole` and
-   `pair_style mesomem/dipole` through the Python API, checks that
-   `mesomem/dipole/kk` and `dipole_sphere_angle(/kk)` were built, and prints
-   `OK: ...` on success.
+6. Writes `env.sh` (PATH and LD_LIBRARY_PATH, including the Python library
+   folder, which `liblammps.so` needs when `python3` comes from a
+   conda/micromamba environment) and runs a smoke test that loads
+   `atom_style hybrid angle sphere dipole` and `pair_style mesomem/dipole`
+   through the Python API, checks that `mesomem/dipole/kk` (and with
+   `CUSTOM_ATOM_STYLE=yes` also `dipole_sphere_angle(/kk)`) was built, and
+   prints `OK: ...` on success.
 
 ## Output layout
 

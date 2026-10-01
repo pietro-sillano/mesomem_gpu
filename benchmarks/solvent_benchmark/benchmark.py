@@ -170,6 +170,7 @@ def run_gpu(args, n_total, data_file, omp, hw_info):
 
     cmd  = [args.lmp_bin, "-in", os.path.abspath("solvent.lmp")]
     cmd += ["-v", "t_run", str(args.steps_gpu), "-v", "data_file", data_file]
+    cmd += ["-v", "atomstyle", args.atomstyle]
     cmd += ["-k", "on", "g", "1", "t", str(omp), "-sf", "kk"]
     cmd += ["-pk", "kokkos", "newton", newton, "neigh", args.neigh, "comm", "device"]
 
@@ -232,6 +233,8 @@ def main():
     parser.add_argument("--solvent_density", type=float, default=0.1)
     parser.add_argument("--prep_mpi",        type=int, default=8)
     parser.add_argument("--force_prep",      action="store_true")
+    parser.add_argument("--atomstyle", default="hybrid angle sphere dipole",
+                        help="atom style for the GPU test (dipole_sphere_angle enables device sorting)")
     parser.add_argument("--replicas",        type=int, default=3)
     parser.add_argument("--test_gpu",        action="store_true")
     parser.add_argument("--hwthread",        action="store_true")

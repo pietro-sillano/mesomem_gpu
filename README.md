@@ -15,7 +15,8 @@ The CPU pair style `pair_style mesomem/dipole` (DIPOLE package,
 `doc/src/pair_mesomem_dipole.rst`) is being contributed to LAMMPS itself and
 lives in the [pietro-sillano/lammps](https://github.com/pietro-sillano/lammps)
 fork, which the build scripts check out. This repository adds the GPU
-(Kokkos) version of that pair style plus an optional custom atom style. All
+(Kokkos) version of that pair style plus an optional custom atom style
+(not built by default). All
 of their source lives in [`cpp_files/`](cpp_files/) -- this is the folder
 that matters if you're modifying the physics or porting it to a new LAMMPS
 version:
@@ -29,7 +30,9 @@ version:
 `compile_local.sh`/`compile_hpc.sh` (see [`BUILDING.md`](BUILDING.md))
 fetch the pinned LAMMPS fork and copy these files into the package
 subfolders above, following LAMMPS's own layout convention so CMake's
-per-package glob picks them up automatically.
+per-package glob picks them up automatically. By default only the Kokkos
+pair style is copied; the custom atom style files are copied only with
+`CUSTOM_ATOM_STYLE=yes`.
 
 Any change to the physics must be made in both `pair_mesomem_dipole.cpp`
 (fork) and `pair_mesomem_dipole_kokkos.cpp` (here); the Kokkos kernel
@@ -43,13 +46,27 @@ atom styles provide this, with the **same** `Atoms` column layout, so every
 data file works with both:
 
 - `atom_style hybrid angle sphere dipole` -- **default** in all input
-  scripts. Recent LAMMPS Kokkos handles hybrid atom styles on the GPU,
-  including `comm device` (halo exchange entirely on the GPU). Only Kokkos
-  atom *sorting* is not yet supported on the device for hybrid styles:
-  LAMMPS prints a warning and sorts on the host instead.
-- `atom_style dipole_sphere_angle` -- custom single (non-hybrid) atom style
-  from `cpp_files/`. It additionally enables Kokkos device-side sorting.
-  Select it in any benchmark script with `-var atomstyle dipole_sphere_angle`.
+  scripts and the only one built by default. Recent LAMMPS Kokkos handles
+  hybrid atom styles on the GPU, including `comm device` (halo exchange
+  entirely on the GPU). Only Kokkos atom *sorting* is not yet supported on
+  the device for hybrid styles: LAMMPS prints a warning ("Atom_style hybrid
+  not (yet) compatible with Kokkos sorting on device, switching to legacy
+  host sorting") and sorts on the host instead. This warning is expected
+  and harmless.
+- `atom_style dipole_sphere_angle` -- optional custom single (non-hybrid)
+  atom style from `cpp_files/`. It additionally enables Kokkos device-side
+  sorting. Build it with `CUSTOM_ATOM_STYLE=yes ./compile_local.sh` and
+  select it in a benchmark with `--atomstyle dipole_sphere_angle` (planar
+  and solvent drivers) or `-var atomstyle dipole_sphere_angle`.
+
+**Host vs device sorting makes no measurable difference.** With
+`mesomem/dipole/kk`, the planar and solvent benchmarks run at the same speed
+with the default hybrid style (host sorting) and the custom style (device
+sorting): ratios between 0.99 and 1.00 at 2.5k-102k atoms, within the <1%
+run-to-run noise (GTX 1080 Ti, see [`BENCHMARKS.md`](BENCHMARKS.md#host-vs-device-sorting)).
+On an RTX 4090 the new pair style with host sorting is also 1-8% faster than
+the old `mesomem/kk` + custom atom style + device sorting. The custom atom
+style is therefore no longer needed and is kept only as an option.
 
 Earlier LAMMPS versions also forced `comm host` for hybrid atom styles,
 which is why the custom style was originally required; that is no longer

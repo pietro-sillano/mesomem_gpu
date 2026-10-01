@@ -210,7 +210,7 @@ lmp -in simulation.lmp \
 | `-sf kk` | Kokkos suffix | Automatically maps all styles to their `kk` variants |
 | `newton on` | Newton's 3rd law | Reduces force evaluations by ~2x; works with `neigh half` |
 | `neigh half` | Half neighbour list | Combined with `newton on` this is always the best option |
-| `comm device` | On-device halo | Avoids PCIe round-trips; works with both `hybrid angle sphere dipole` and `dipole_sphere_angle` |
+| `comm device` | On-device halo | Avoids PCIe round-trips; works with the default `hybrid angle sphere dipole` atom style |
 
 ### Half vs full neighbour list
 
@@ -284,14 +284,50 @@ Best configurations per N:
   N= 153600  TPS=283.4   neigh=half newton=on  comm=device sort=host   OMP=4
 ```
 
-`comm=device` and `sort=device` matter the most — moving everything to
-device is the biggest win. Device sorting requires the custom
-`dipole_sphere_angle` atom style (`-var atomstyle dipole_sphere_angle`);
-with the default `hybrid angle sphere dipole` style LAMMPS falls back to
-host sorting. `neigh full` + `newton off` can win for smaller systems.
+`comm=device` matters the most — moving everything to device is the
+biggest win. `neigh full` + `newton off` can win for smaller systems.
 
 These sweeps were measured with the old `mesomem` pair style and the
-custom atom style, before the switch to `mesomem/dipole`.
+custom atom style, before the switch to `mesomem/dipole`. For
+`mesomem/dipole/kk`, device sorting no longer matters (next section).
+
+## Host vs device sorting
+
+Device sorting requires the optional custom `dipole_sphere_angle` atom
+style (`CUSTOM_ATOM_STYLE=yes` build, `--atomstyle dipole_sphere_angle`);
+the default `hybrid angle sphere dipole` style sorts on the host. Same
+`mesomem/dipole/kk` binary, GTX 1080 Ti, 1 GPU, 1 MPI rank, `neigh half`,
+`newton on`, `comm device`, 3 replicas (timesteps/s):
+
+| System | N atoms | hybrid (host sort) | `dipole_sphere_angle` (device sort) | ratio |
+|---|---|---|---|---|
+| planar | 2,500 | 1663 | 1665 | 1.00 |
+| planar | 10,000 | 963 | 963 | 1.00 |
+| planar | 102,400 | 160.4 | 158.4 | 0.99 |
+| solvent | 4,783 | 1544 | 1531 | 0.99 |
+| solvent | 28,423 | 890 | 894 | 1.00 |
+| solvent | 78,050 | 428 | 426 | 1.00 |
+
+The differences are within the run-to-run noise (std < 1%), so host
+sorting is the default and the custom atom style is not built.
+
+Old vs new on the same hardware (RTX 4090 + i9-14900K), GPU timesteps/s:
+old = `mesomem/kk` + `dipole_sphere_angle` + device sorting (md69),
+new = `mesomem/dipole/kk` + hybrid + host sorting (md68):
+
+| System | N atoms | old | new | new/old |
+|---|---|---|---|---|
+| planar | 2,500 | 2130 | 2209 | 1.04 |
+| planar | 10,000 | 1980 | 2069 | 1.05 |
+| planar | 102,400 | 454 | 473 | 1.04 |
+| solvent | 4,783 | 2089 | 2215 | 1.06 |
+| solvent | 28,423 | 2009 | 2055 | 1.02 |
+| solvent | 78,050 | 1169 | 1203 | 1.03 |
+| polymer | 99,280 | 742 | 752 | 1.01 |
+| polymer_solvent | 229,345 | 699 | 752 | 1.08 |
+
+(old polymer runs used OMP=4, all others OMP=1; OMP has <1% effect on GPU
+runs.)
 
 ## Timing and profiling
 

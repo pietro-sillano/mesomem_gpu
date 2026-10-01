@@ -3,8 +3,9 @@
 # compile_hpc.sh -- build LAMMPS + MesoMem GPU package on an HPC cluster
 #
 # Fetches a pinned LAMMPS commit, drops in the custom MesoMem source files
-# from cpp_files/, and builds LAMMPS with KOKKOS (GPU/CUDA), MPI, and the
-# Python API, using the cluster's module system.
+# from cpp_files/, and builds LAMMPS with KOKKOS (CUDA on the GPU plus
+# OpenMP host threads), MPI, and the Python API, using the cluster's module
+# system.
 #
 # Run this from an interactive GPU job, e.g. on Snellius:
 #   srun --partition=gpu --gpus=1 --ntasks=1 --cpus-per-task=16 --time=01:00:00 --pty bash
@@ -46,6 +47,13 @@ LAMMPS_REF="d585fbed4b93af69ddefd481ef6a3c6a6e32f6fd"
 
 # GPU architecture on the cluster's GPU partition (Snellius: A100 -> AMPERE80)
 GPU_ARCH="AMPERE80"
+# Kokkos floating point precision: "double", "mixed" (float math, double
+# accumulation) or "single"
+KOKKOS_PREC="double"
+# "yes" also builds the optional custom atom style dipole_sphere_angle(/kk),
+# only needed for Kokkos device-side sorting, which gave no speedup (see
+# BENCHMARKS.md); the default hybrid atom style uses host sorting
+CUSTOM_ATOM_STYLE="no"
 
 BUILD_ROOT="$SCRIPT_DIR/_build/hpc"
 SRC_DIR="$BUILD_ROOT/lammps-src"
@@ -57,6 +65,8 @@ JOBS="$(nproc)"
 echo "== MesoMem GPU build (hpc) =="
 echo "  work dir: $BUILD_ROOT"
 echo "  GPU arch: $GPU_ARCH"
+echo "  precision: $KOKKOS_PREC"
+echo "  custom atom style: $CUSTOM_ATOM_STYLE"
 echo "  force:    $FORCE"
 echo
 
@@ -101,6 +111,13 @@ else
   git -C "$SRC_DIR" checkout -q FETCH_HEAD
 fi
 
+# The Kokkos nvcc_wrapper of this LAMMPS commit expands CMake's @objects.rsp
+# response file without stripping the quotes around each object path, so
+# linking liblammps.so fails ("cannot specify -o with -c ... multiple files").
+# Strip the quotes (no-op if already patched).
+sed -i 's|set -- \$1 \$(cat "\$rsp_file") "\${@:2}"|set -- $1 $(tr -d \x27"\x27 < "$rsp_file") "${@:2}"|' \
+  "$SRC_DIR/lib/kokkos/bin/nvcc_wrapper"
+
 # --------------------------------------------------------------------------
 # Step 2: drop in the custom MesoMem source files
 #
@@ -110,16 +127,23 @@ fi
 # --------------------------------------------------------------------------
 echo "-- installing MesoMem custom source files --"
 # the CPU pair style mesomem/dipole is part of the pinned LAMMPS fork;
-# only the Kokkos pair style and the optional custom atom style are added.
-cp "$SCRIPT_DIR"/cpp_files/atom_vec_dipole_sphere_angle.cpp \
-   "$SCRIPT_DIR"/cpp_files/atom_vec_dipole_sphere_angle.h \
-   "$SRC_DIR/src/DIPOLE/"
-
-cp "$SCRIPT_DIR"/cpp_files/atom_vec_dipole_sphere_angle_kokkos.cpp \
-   "$SCRIPT_DIR"/cpp_files/atom_vec_dipole_sphere_angle_kokkos.h \
-   "$SCRIPT_DIR"/cpp_files/pair_mesomem_dipole_kokkos.cpp \
+# only the Kokkos pair style (and optionally the custom atom style) is added.
+cp "$SCRIPT_DIR"/cpp_files/pair_mesomem_dipole_kokkos.cpp \
    "$SCRIPT_DIR"/cpp_files/pair_mesomem_dipole_kokkos.h \
    "$SRC_DIR/src/KOKKOS/"
+
+if [[ "$CUSTOM_ATOM_STYLE" == "yes" ]]; then
+  cp "$SCRIPT_DIR"/cpp_files/atom_vec_dipole_sphere_angle.cpp \
+     "$SCRIPT_DIR"/cpp_files/atom_vec_dipole_sphere_angle.h \
+     "$SRC_DIR/src/DIPOLE/"
+  cp "$SCRIPT_DIR"/cpp_files/atom_vec_dipole_sphere_angle_kokkos.cpp \
+     "$SCRIPT_DIR"/cpp_files/atom_vec_dipole_sphere_angle_kokkos.h \
+     "$SRC_DIR/src/KOKKOS/"
+else
+  # remove copies left over from an earlier CUSTOM_ATOM_STYLE=yes build
+  rm -f "$SRC_DIR"/src/DIPOLE/atom_vec_dipole_sphere_angle.{cpp,h} \
+        "$SRC_DIR"/src/KOKKOS/atom_vec_dipole_sphere_angle_kokkos.{cpp,h}
+fi
 
 # --------------------------------------------------------------------------
 # Step 3: configure, build, install
@@ -130,6 +154,7 @@ cd "$SRC_DIR/build"
 
 cmake \
   -D BUILD_MPI=yes \
+  -D BUILD_OMP=yes \
   -D BUILD_SHARED_LIBS=yes \
   -D CMAKE_BUILD_TYPE=Release \
   -D PKG_PYTHON=yes \
@@ -137,6 +162,8 @@ cmake \
   -D PKG_MOLECULE=yes \
   -D PKG_EXTRA-PAIR=yes \
   -D PKG_KOKKOS=yes \
+  -D Kokkos_ENABLE_OPENMP=yes \
+  -D KOKKOS_PREC="$KOKKOS_PREC" \
   -D Kokkos_ENABLE_CUDA=yes \
   -D "Kokkos_ARCH_${GPU_ARCH}=yes" \
   -D Kokkos_ENABLE_CUDA_UVM=OFF \
@@ -203,11 +230,13 @@ lmp = lammps()
 lmp.command('units lj')
 lmp.command('atom_style hybrid angle sphere dipole')
 lmp.command('pair_style mesomem/dipole 2.5')
-for cat, name in [('atom', 'dipole_sphere_angle'), ('atom', 'dipole_sphere_angle/kk'),
-                  ('pair', 'mesomem/dipole/kk')]:
+styles = [('pair', 'mesomem/dipole/kk')]
+if '$CUSTOM_ATOM_STYLE' == 'yes':
+    styles += [('atom', 'dipole_sphere_angle'), ('atom', 'dipole_sphere_angle/kk')]
+for cat, name in styles:
     if not lmp.has_style(cat, name):
         raise SystemExit(f'ERROR: {cat} style {name} missing from the build')
-print('OK: mesomem/dipole(/kk) and the atom styles are available through the Python API')
+print('OK: ' + ', '.join(name for _, name in styles) + ' available through the Python API')
 "
 
 deactivate
