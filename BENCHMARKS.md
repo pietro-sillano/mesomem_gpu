@@ -329,6 +329,53 @@ new = `mesomem/dipole/kk` + hybrid + host sorting (md68):
 (old polymer runs used OMP=4, all others OMP=1; OMP has <1% effect on GPU
 runs.)
 
+## GPU precision: use single precision
+
+**Recommendation: build with `KOKKOS_PREC=single`** (`KOKKOS_PREC=single
+./compile_local.sh`, or set `KOKKOS_PREC="single"` in `compile_hpc.sh`).
+The `mesomem/dipole/kk` kernel is dominated by `sqrt`/`sin`/`cos`/`exp`/`pow`
+per pair, and consumer GPUs run double precision at only 1/32 (GTX 1080 Ti)
+or 1/64 (RTX 4090) of the single precision rate.
+
+Measured with [`benchmarks/precision_compare/compare.py`](benchmarks/precision_compare/compare.py)
+(1 GPU, `neigh half`, `newton on`, `comm device`, hybrid atom style, 2
+replicas, std < 1%), timesteps/s:
+
+| Machine | System | double | mixed | single | single/double |
+|---|---|---|---|---|---|
+| md68 (RTX 4090) | planar 10k | 2028 | 6076 | 6424 | 3.2x |
+| md68 (RTX 4090) | planar 102k | 516 | 2721 | 3035 | 5.9x |
+| md68 (RTX 4090) | polymer + solvent 229k | 745 | 1987 | 2065 | 2.8x |
+| md43 (GTX 1080 Ti) | planar 10k | 1131 | 3058 | 3204 | 2.8x |
+| md43 (GTX 1080 Ti) | planar 102k | 202 | 716 | 904 | 4.5x |
+| md43 (GTX 1080 Ti) | polymer + solvent 229k | 293 | 453 | 507 | 1.7x |
+
+`mixed` (float math, double force/energy accumulation) gets 90-95% of the
+single precision speed and is the fallback if single precision turns out
+to be too inaccurate for a given observable.
+
+Single precision GPU vs the CPU-only `mesomem/dipole` (plain MPI; serial =
+1 core, best CPU = fastest rank count tried, 16 on md68, 6 on md43):
+
+![serial CPU vs best CPU vs GPU single precision](benchmarks/precision_compare/cpu_vs_gpu.png)
+
+On md68 single precision GPU is 40-182x faster than one CPU core and 5-23x
+faster than the best MPI run (16 ranks; going from 8 to 16 ranks on the
+i9-14900K adds only 5-16% because the extra ranks land on efficiency cores).
+
+Caveats:
+
+- Accuracy has not been validated yet. All runs finished without NaNs and
+  the final potential energies of double/mixed/single agree within ~0.5%,
+  but the Langevin thermostat is stochastic, so this is only a sanity
+  check. Check NVE energy conservation and the observables you care about
+  against a double precision run before production.
+- With a non-integer `zeta`, single/mixed precision can produce NaNs at the
+  cutoff: `(float) MY_PI2` is slightly larger than pi/2, so `cos(g)` can be
+  slightly negative and `pow(negative, 2*zeta-1)` is NaN. Integer `zeta`
+  (all benchmarks use `zeta = 5`) takes a multiplication loop and is not
+  affected.
+
 ## Timing and profiling
 
 ### Accurate GPU timings

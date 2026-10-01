@@ -1,0 +1,25 @@
+system,config,build,mpi,omp,steps,tps_mean,tps_std,pe_last,machine
+planar_10k,GPU double,gpu-double,1,1,2000,2027.989,0.211,-2.879969,md68
+planar_10k,GPU mixed,gpu-mixed,1,1,2000,6075.884,2.947,-2.8958533,md68
+planar_10k,GPU single,gpu-single,1,1,2000,6424.113,18.218,-2.880935,md68
+planar_10k,CPU MPI 1,gpu-double,1,1,500,161.216,0.24,-2.8889797,md68
+planar_10k,CPU MPI 2,gpu-double,2,1,500,319.422,0.053,-2.8980532,md68
+planar_10k,CPU MPI 4,gpu-double,4,1,500,622.231,1.442,-2.8990079,md68
+planar_10k,CPU MPI 8,gpu-double,8,1,500,1155.994,7.249,-2.9000086,md68
+planar_10k,CPU MPI 16,gpu-double,16,1,500,1255.709,1.716,-2.8944417,md68
+planar_102k,GPU double,gpu-double,1,1,1000,515.827,0.514,-2.894277,md68
+planar_102k,GPU mixed,gpu-mixed,1,1,1000,2721.299,3.947,-2.8954058,md68
+planar_102k,GPU single,gpu-single,1,1,1000,3034.665,2.982,-2.8948421,md68
+planar_102k,CPU MPI 1,gpu-double,1,1,100,16.709,0.019,-3.076075,md68
+planar_102k,CPU MPI 2,gpu-double,2,1,100,33.246,0.006,-3.0774104,md68
+planar_102k,CPU MPI 4,gpu-double,4,1,100,64.171,0.576,-3.0761635,md68
+planar_102k,CPU MPI 8,gpu-double,8,1,100,113.989,7.011,-3.0761165,md68
+planar_102k,CPU MPI 16,gpu-double,16,1,100,132.574,0.063,-3.0754214,md68
+polymer_solvent_229k,GPU double,gpu-double,1,1,1000,744.841,0.371,6.3805636,md68
+polymer_solvent_229k,GPU mixed,gpu-mixed,1,1,1000,1986.503,1.442,6.3808268,md68
+polymer_solvent_229k,GPU single,gpu-single,1,1,1000,2064.823,0.333,6.3805389,md68
+polymer_solvent_229k,CPU MPI 1,gpu-double,1,1,50,23.899,0.026,6.4487457,md68
+polymer_solvent_229k,CPU MPI 2,gpu-double,2,1,50,46.022,0.054,6.4480126,md68
+polymer_solvent_229k,CPU MPI 4,gpu-double,4,1,50,85.03,0.152,6.4477105,md68
+polymer_solvent_229k,CPU MPI 8,gpu-double,8,1,50,138.946,17.691,6.4482082,md68
+polymer_solvent_229k,CPU MPI 16,gpu-double,16,1,50,145.228,0.505,6.4485339,md68

@@ -27,7 +27,7 @@ Both scripts have these plain variables near the top of the file
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `KOKKOS_PREC` | `double` | Kokkos precision: `double`, `mixed` (float math, double accumulation) or `single` |
+| `KOKKOS_PREC` | `double` | Kokkos precision: `double`, `mixed` (float math, double accumulation) or `single`. **`single` is recommended** for speed (up to 6x faster, see [`BENCHMARKS.md`](BENCHMARKS.md#gpu-precision-use-single-precision)) |
 | `CUSTOM_ATOM_STYLE` | `no` | `yes` also builds the optional `dipole_sphere_angle(/kk)` atom style (only needed for Kokkos device sorting, which gives no speedup, see [`BENCHMARKS.md`](BENCHMARKS.md#host-vs-device-sorting)) |
 | `JOBS` (local only) | `8` | parallel compile jobs |
 
