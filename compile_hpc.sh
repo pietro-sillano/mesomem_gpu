@@ -13,7 +13,7 @@
 # The module names/versions and GPU_ARCH below are set for Snellius
 # (A100 GPUs). Edit them if you're building on a different cluster.
 #
-# If ./_build/hpc/lammps-src already exists (from a previous run), the
+# If ./_build/hpc/lammps-src already exists at the pinned commit, the
 # LAMMPS fetch is skipped and re-running this script just does an
 # incremental rebuild (custom source files are always re-copied first, so
 # local edits to cpp_files/ are picked up). Pass --force to wipe it and
@@ -38,11 +38,12 @@ done
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 LAMMPS_GIT_URL="https://github.com/lammps/lammps.git"
-# Pinned LAMMPS commit (develop branch, "30 Mar 2026" snapshot) that the
-# custom KOKKOS files in cpp_files/ are known to compile against. The
-# stable/*.tar.gz release is NOT compatible: AtomVecKokkos's sync/modified
-# API changed (uint64_t masks, sync_pinned) after the last stable tag.
-LAMMPS_REF="5ea3b58ad8d72ddc1b50c102033578181d34bbbd"
+# Pinned LAMMPS commit: the "patch_13Nov2026" feature release. It is the
+# first release that ships pair_style mesomem/dipole (DIPOLE) together with
+# its KOKKOS port (mesomem/dipole/kk), and the custom KOKKOS atom style in
+# cpp_files/ is known to compile against it. stable_30Sep2026 does NOT
+# contain mesomem/dipole.
+LAMMPS_REF="68b557e3a2148ea9b31dda5b55800215fb8be677"
 
 # GPU architecture on the cluster's GPU partition (Snellius: A100 -> AMPERE80)
 GPU_ARCH="AMPERE80"
@@ -86,7 +87,10 @@ echo
 # --------------------------------------------------------------------------
 # Step 1: fetch the pinned LAMMPS source tree (skipped if already present)
 # --------------------------------------------------------------------------
-if [[ "$FORCE" == "no" && -d "$SRC_DIR/.git" ]]; then
+# an existing checkout is only reused if it is at the pinned commit, so
+# bumping LAMMPS_REF above automatically triggers a fresh fetch
+CURRENT_REF="$(git -C "$SRC_DIR" rev-parse HEAD 2>/dev/null || true)"
+if [[ "$FORCE" == "no" && "$CURRENT_REF" == "$LAMMPS_REF" ]]; then
   echo "-- reusing existing LAMMPS source at $SRC_DIR (pass --force to refetch from scratch) --"
 else
   echo "-- fetching LAMMPS ($LAMMPS_REF) --"
@@ -106,19 +110,12 @@ fi
 # picks them up.
 # --------------------------------------------------------------------------
 echo "-- installing MesoMem custom source files --"
-cp "$SCRIPT_DIR"/cpp_files/pair_mesomem.cpp \
-   "$SCRIPT_DIR"/cpp_files/pair_mesomem.h \
-   "$SRC_DIR/src/"
-
 cp "$SCRIPT_DIR"/cpp_files/atom_vec_dipole_sphere_angle.cpp \
    "$SCRIPT_DIR"/cpp_files/atom_vec_dipole_sphere_angle.h \
    "$SRC_DIR/src/DIPOLE/"
 
 cp "$SCRIPT_DIR"/cpp_files/atom_vec_dipole_sphere_angle_kokkos.cpp \
    "$SCRIPT_DIR"/cpp_files/atom_vec_dipole_sphere_angle_kokkos.h \
-   "$SCRIPT_DIR"/cpp_files/pair_mesomem_kokkos.cpp \
-   "$SCRIPT_DIR"/cpp_files/pair_mesomem_kokkos.h \
-   "$SCRIPT_DIR"/cpp_files/fix_langevin_kokkos.cpp \
    "$SRC_DIR/src/KOKKOS/"
 
 # --------------------------------------------------------------------------
@@ -190,7 +187,7 @@ deactivate
 echo "-- wrote $ENV_FILE --"
 
 # --------------------------------------------------------------------------
-# Step 6: smoke test - confirm the mesomem atom/pair styles load via Python
+# Step 6: smoke test - confirm the atom/pair styles load via Python
 # --------------------------------------------------------------------------
 echo "-- running smoke test --"
 # shellcheck disable=SC1090
@@ -202,8 +199,8 @@ from lammps import lammps
 lmp = lammps()
 lmp.command('units lj')
 lmp.command('atom_style dipole_sphere_angle')
-lmp.command('pair_style mesomem 2.5')
-print('OK: mesomem atom_style + pair_style loaded through the Python API')
+lmp.command('pair_style mesomem/dipole')
+print('OK: dipole_sphere_angle atom_style + mesomem/dipole pair_style loaded through the Python API')
 "
 
 deactivate
