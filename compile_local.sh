@@ -57,8 +57,11 @@ echo
 # --------------------------------------------------------------------------
 command -v cmake   >/dev/null 2>&1 || { echo "ERROR: cmake not found"; exit 1; }
 command -v mpicc   >/dev/null 2>&1 || { echo "ERROR: MPI compiler (mpicc) not found"; exit 1; }
-command -v python3 >/dev/null 2>&1 || { echo "ERROR: python3 not found"; exit 1; }
-PYTHON_BIN="$(command -v python3)"
+# always build against the system python, even if a micromamba/conda env is
+# active: liblammps.so links to libpython, and switching interpreters between
+# runs breaks CMake's cached Python lookup
+PYTHON_BIN="/usr/bin/python3"
+[[ -x "$PYTHON_BIN" ]] || { echo "ERROR: $PYTHON_BIN not found"; exit 1; }
 
 command -v nvidia-smi >/dev/null 2>&1 || { echo "ERROR: nvidia-smi not found, no GPU detected"; exit 1; }
 COMPUTE_CAP="$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | head -1)"
@@ -137,6 +140,7 @@ cmake \
   -D "Kokkos_ARCH_${GPU_ARCH}=yes" \
   -D Kokkos_ENABLE_CUDA_UVM=OFF \
   -D CMAKE_CXX_COMPILER="$SRC_DIR/lib/kokkos/bin/nvcc_wrapper" \
+  -U "Python_*" -U "_Python_*" \
   -D Python_EXECUTABLE="$PYTHON_BIN" \
   -D CMAKE_INSTALL_PREFIX="$INSTALL_PREFIX" \
   "$SRC_DIR/cmake"
