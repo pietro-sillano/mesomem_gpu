@@ -22,6 +22,17 @@ Each system folder contains:
 
 ## Quick start
 
+Full sweep of all four systems + plots for one hardware type (MPI lists per
+type are set in the script):
+
+```bash
+micromamba activate gpu_env
+source env_local.sh
+benchmarks/run_all.sh md6x       # or md4x
+```
+
+A single system by hand:
+
 ```bash
 cd benchmarks/planar_benchmark
 
@@ -43,7 +54,8 @@ env: it loads the `compile_local.sh` build matching this machine's GPU, so
 
 `--machine` is a label for the hardware type, not the host: all md6*
 workstations (i9-14900K + RTX 4090) are identical, so their results go to
-`results_md6x.csv` whichever md6* machine ran them.
+`results_md6x.csv` whichever md6* machine ran them; md4* (Xeon W-2135 + GTX
+1080 Ti) use `md4x`. Only compare results of the same type.
 
 All MesoMem inputs use the upstream pair style `pair_style mesomem/dipole`
 (`pair_style hybrid mesomem/dipole lj/cut ...` with solvent/polymer); with

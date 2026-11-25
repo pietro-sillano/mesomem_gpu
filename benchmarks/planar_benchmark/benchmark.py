@@ -91,7 +91,7 @@ def run_replicas(cmd, base_dir, env, n_replicas):
 def run_gpu(args, n, omp, lmp_input, hw_info):
     cpu_model, gpu_info = hw_info
     newton = "on" if args.neigh == "half" else "off"
-    base_dir = os.path.join("bench_runs", f"N{n}_GPU_O{omp}")
+    base_dir = os.path.join("bench_runs", f"{args.machine}_N{n}_GPU_O{omp}")
 
     cmd  = [args.lmp_bin, "-in", lmp_input]
     cmd += ["-v", "N", str(n), "-v", "t_run", str(args.steps_gpu)]
@@ -115,7 +115,7 @@ def run_gpu(args, n, omp, lmp_input, hw_info):
 
 def run_cpu(args, n, mpi, lmp_input, hw_info):
     cpu_model, gpu_info = hw_info
-    base_dir = os.path.join("bench_runs", f"N{n}_CPU_M{mpi}")
+    base_dir = os.path.join("bench_runs", f"{args.machine}_N{n}_CPU_M{mpi}")
 
     cmd  = ["mpirun", "-np", str(mpi), "--map-by", "socket:PE=1"]
     if args.hwthread:
@@ -203,7 +203,7 @@ def main():
 
     # do not overwrite a previous CSV with an empty one
     if not results:
-        sys.exit("ERROR: all runs failed, see bench_runs/*/log.lammps (no CSV written)")
+        sys.exit(f"ERROR: all runs failed, see bench_runs/{args.machine}_*/log.lammps (no CSV written)")
 
     df    = pd.DataFrame(results)
     fname = f"results_{args.machine}.csv"
