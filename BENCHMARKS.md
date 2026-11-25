@@ -243,6 +243,28 @@ cd benchmarks/planar_benchmark
 ./ab_old_new.sh                  # N=2500, 2000 steps, 2 reps each
 ```
 
+### md6x: new build vs old baseline (Nov 2026)
+
+md67, i9-14900K + RTX 4090, same settings as the May baseline
+(`compare_bench.py --old md6x_old --new md6x`, plots in
+`plots/compare_md6x_old_vs_md6x/`). Upstream `mesomem/dipole` on
+`patch_13Nov2026` is faster everywhere:
+
+| | new / old TPS |
+|---|---|
+| GPU, planar + solvent, all N | 1.10 – 1.13 |
+| CPU, planar | 1.24 – 1.57 |
+| CPU, solvent | 1.06 – 1.41 |
+| CPU, polymer, polymer_solvent | 1.14 – 1.19 |
+
+`ab_old_new.sh` on the same idle GPU (planar N=2500): old 2019 / 2080,
+new 2293 / 2323 timesteps/s. Largest systems on the GPU: planar N=102400
+511 TPS, solvent N=269380 671 TPS.
+
+This sweep used a build without the Kokkos OpenMP backend, so the GPU runs
+with OMP 4/8 failed: there are GPU rows only for OMP 1, and none for polymer
+and polymer_solvent (which use OMP 4 only).
+
 ### md4x results (patch_13Nov2026, Nov 2026)
 
 md43, Xeon W-2135 (6 cores / 12 threads) + GTX 1080 Ti, `mesomem/dipole/kk`,
