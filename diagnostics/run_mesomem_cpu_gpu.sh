@@ -9,6 +9,7 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 LMP=${LMP:-lmp}
+command -v "$LMP" >/dev/null || { echo "ERROR: $LMP not found, source _build/<build>/env.sh first"; exit 1; }
 GPU_FLAGS="-k on g 1 -sf kk -pk kokkos newton on neigh half comm device"
 
 for mode in cpu gpu; do
