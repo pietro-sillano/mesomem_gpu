@@ -23,3 +23,4 @@ bench_runs/
 
 # local Claude Code settings (machine-specific permission allowlist)
 .claude/
+benchmarks/sweep_*.log

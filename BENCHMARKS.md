@@ -243,6 +243,21 @@ cd benchmarks/planar_benchmark
 ./ab_old_new.sh                  # N=2500, 2000 steps, 2 reps each
 ```
 
+### md4x results (patch_13Nov2026, Nov 2026)
+
+md43, Xeon W-2135 (6 cores / 12 threads) + GTX 1080 Ti, `mesomem/dipole/kk`,
+GPU 5000 steps, CPU 500 steps, 3 replicas (`results_md4x.csv`,
+`plots/md4x/`). Largest system per benchmark, timesteps/s:
+
+| System | N | GPU (1 GPU) | best CPU (12 MPI) | GPU / CPU |
+|--------|---|-------------|-------------------|-----------|
+| planar | 102400 | 168 | 66 | 2.6 |
+| solvent | 269380 | 245 | 40 | 6.1 |
+| polymer | 99280 | 312 | 54 | 5.8 |
+| polymer_solvent | 229345 | 295 | 48 | 6.1 |
+
+The number of OpenMP threads (`t 1/4/8`) makes no difference on the GPU.
+
 ## Running simulations — the canonical GPU command
 
 ```bash

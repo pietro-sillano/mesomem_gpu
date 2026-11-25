@@ -1,0 +1,7 @@
+N,Mode,MPI,OMP,Neigh,TPS_mean,TPS_std,Wall_mean,Wall_std,CPU_Info,GPU_Name,GPU_Cap,LMP_Binary,Machine
+99280,GPU,1,4,half,312.03566666666666,0.9969588200567226,17.67859387397766,0.04880912290759267,Intel(R) Xeon(R) W-2135 CPU @ 3.70GHz,NVIDIA GeForce GTX 1080 Ti,6.1,/martini/pietro/mesomem_gpu/_build/local_sm61/install/bin/lmp,md4x
+99280,CPU,1,1,none,15.410666666666666,0.11693397947369936,33.986715952555336,0.23913334265924294,Intel(R) Xeon(R) W-2135 CPU @ 3.70GHz,NVIDIA GeForce GTX 1080 Ti,6.1,/martini/pietro/mesomem_gpu/_build/local_sm61/install/bin/lmp,md4x
+99280,CPU,2,1,none,18.45566666666667,0.0641473997048118,29.09557795524597,0.105068956036622,Intel(R) Xeon(R) W-2135 CPU @ 3.70GHz,NVIDIA GeForce GTX 1080 Ti,6.1,/martini/pietro/mesomem_gpu/_build/local_sm61/install/bin/lmp,md4x
+99280,CPU,4,1,none,34.913666666666664,0.12632585729858264,16.0712095896403,0.05079622045679304,Intel(R) Xeon(R) W-2135 CPU @ 3.70GHz,NVIDIA GeForce GTX 1080 Ti,6.1,/martini/pietro/mesomem_gpu/_build/local_sm61/install/bin/lmp,md4x
+99280,CPU,6,1,none,35.65966666666667,0.03907542563925643,15.825186729431152,0.009950722410223168,Intel(R) Xeon(R) W-2135 CPU @ 3.70GHz,NVIDIA GeForce GTX 1080 Ti,6.1,/martini/pietro/mesomem_gpu/_build/local_sm61/install/bin/lmp,md4x
+99280,CPU,12,1,none,54.25066666666667,1.2240572789793063,11.304326375325521,0.45565187689270725,Intel(R) Xeon(R) W-2135 CPU @ 3.70GHz,NVIDIA GeForce GTX 1080 Ti,6.1,/martini/pietro/mesomem_gpu/_build/local_sm61/install/bin/lmp,md4x
