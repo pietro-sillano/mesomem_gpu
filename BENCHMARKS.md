@@ -283,6 +283,29 @@ GPU 5000 steps, CPU 500 steps, 3 replicas (`results_md4x.csv`,
 
 The number of OpenMP threads (`t 1/4/8`) makes no difference on the GPU.
 
+### md4x vs md6x (same build, Nov 2026)
+
+Same `patch_13Nov2026` build and inputs on md43 (Xeon W-2135 + GTX 1080 Ti)
+and md67 (i9-14900K + RTX 4090), timesteps/s:
+
+| System | N | GPU md4x | GPU md6x | md6x/md4x | best CPU md4x (12 MPI) | best CPU md6x (16 MPI) | md6x/md4x |
+|--------|---|----------|----------|-----------|------------------------|------------------------|-----------|
+| planar | 2500 | 1614 | 2392 | 1.5 | 1869 | 6657 | 3.6 |
+| planar | 102400 | 168 | 511 | 3.0 | 66 | 173 | 2.6 |
+| solvent | 4783 | 1468 | 2315 | 1.6 | 1549 | 4340 | 2.8 |
+| solvent | 269380 | 245 | 671 | 2.7 | 40 | 116 | 2.9 |
+| polymer | 99280 | 312 | 795 | 2.5 | 54 | 182 | 3.4 |
+| polymer_solvent | 229345 | 295 | 799 | 2.7 | 48 | 154 | 3.2 |
+
+- The 4090's GPU lead grows with N: ~1.5x for a few thousand particles
+  (overhead-bound), 2.5–3x from ~100k particles.
+- One CPU rank is ~2x faster on md6x; the full CPU 2.5–3.5x (16 vs 12 ranks).
+- For large systems the GPU beats the full CPU by a similar factor on both
+  machines (md4x 2.6–6.1x, md6x 3.0–5.8x). Below ~5k particles the full CPU
+  is faster on both; on md6x the GPU only pays off from ~10k particles.
+- md4x 12-rank CPU runs use hyperthreads and are noisy (planar N=2500:
+  ±700 TPS), and md43's GPU also drives the desktop.
+
 ## Running simulations — the canonical GPU command
 
 ```bash
