@@ -52,10 +52,11 @@ first, so local edits are picked up). Pass `--force` to wipe it and fetch
 
 ## Output layout
 
-Each script is self-contained under `_build/local_<host>/` (e.g.
-`_build/local_md69/`; one per workstation, since `/martini` is shared
-between machines with different GPUs) or `_build/hpc/` (gitignored —
-nothing outside that folder is touched):
+Each script is self-contained under `_build/local_sm<XY>/` or `_build/hpc/`
+(gitignored — nothing outside that folder is touched). `XY` is the GPU
+compute capability: `/martini` is shared, so there is one local build per GPU
+type, used by every machine with that GPU (md6*, RTX 4090: `local_sm89`;
+md4*, GTX 1080 Ti: `local_sm61`). Each build folder contains:
 
 - `_build/<build>/lammps-src/` — fetched LAMMPS source (+ atom style files copied in)
 - `_build/<build>/install/` — installed `lmp` binary + `liblammps.so`
@@ -65,12 +66,15 @@ nothing outside that folder is touched):
 ## Using a finished build
 
 ```bash
-source _build/local_$(hostname -s)/env.sh
-source _build/local_$(hostname -s)/venv/bin/activate
+source env_local.sh        # picks _build/local_sm<XY>/env.sh for this GPU
 lmp -k on g 1 -sf kk -pk kokkos newton on neigh half comm device -in your_script.lmp
 ```
 
-or from Python:
+or from Python (the `lammps` module lives in the build's venv):
+
+```bash
+source _build/local_sm89/venv/bin/activate   # sm61 on md4*
+```
 
 ```python
 from lammps import lammps

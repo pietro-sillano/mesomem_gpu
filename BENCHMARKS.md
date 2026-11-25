@@ -25,19 +25,25 @@ Each system folder contains:
 ```bash
 cd benchmarks/planar_benchmark
 
-# GPU + CPU sweep, 3 replicas each, save to results_md69.csv
-python benchmark.py --machine md69 --lmp_bin lmp \
+# GPU + CPU sweep, 3 replicas each, save to results_md6x.csv
+python benchmark.py --machine md6x \
     --test_gpu --omp_list 1 4 8 --mpi_list 1 4 8 12 \
     --steps_gpu 5000 --steps_cpu 500 --hwthread
 
-# Generate all plots into benchmarks/plots/md69/
+# Generate all plots into benchmarks/plots/md6x/
 cd ..
-python plot_bench.py --machine md69
+python plot_bench.py --machine md6x
 ```
 
-`--lmp_bin` should point at (or resolve via PATH to) the `lmp` binary
-produced by `compile_local.sh`/`compile_hpc.sh` — `source
-_build/local_$(hostname -s)/env.sh` first.
+Run `source env_local.sh` (repo root) first, after activating the micromamba
+env: it loads the `compile_local.sh` build matching this machine's GPU, so
+`lmp` (the `--lmp_bin` default) is the right binary on every workstation.
+`benchmark.py` stops if `lmp` is not found, records its full path in the
+`LMP_Binary` column, and does not write a CSV if every run failed.
+
+`--machine` is a label for the hardware type, not the host: all md6*
+workstations (i9-14900K + RTX 4090) are identical, so their results go to
+`results_md6x.csv` whichever md6* machine ran them.
 
 All MesoMem inputs use the upstream pair style `pair_style mesomem/dipole`
 (`pair_style hybrid mesomem/dipole lj/cut ...` with solvent/polymer); with
@@ -50,7 +56,7 @@ Every system exposes the same set of arguments:
 | Argument | Default | Description |
 |----------|---------|-------------|
 | `--machine` | *(required)* | Label written into the CSV filename (`results_{machine}.csv`) |
-| `--lmp_bin` | `lmp_kokkos` | LAMMPS binary name/path |
+| `--lmp_bin` | `lmp` | LAMMPS binary name/path |
 | `--steps_gpu` | 1000 | MD steps for each GPU replica |
 | `--steps_cpu` | 500 | MD steps for each CPU replica |
 | `--omp_list` | `1 4 8` | OpenMP thread counts for the **GPU test** |
@@ -101,7 +107,7 @@ input/lattice_d_0.85_N_{N}_ds      # for each N in --n_list
 The script skips any N for which the file is missing.
 
 ```bash
-python benchmark.py --machine md69 --lmp_bin lmp \
+python benchmark.py --machine md6x \
     --test_gpu --n_list 2500 10000 102400 501264 \
     --omp_list 1 4 8 --mpi_list 1 4 8 12 --hwthread
 ```
@@ -127,7 +133,7 @@ Ensure `comm device` is active — solvent dramatically increases halo atom
 counts at the membrane–solvent interface.
 
 ```bash
-python benchmark.py --machine md69 --lmp_bin lmp \
+python benchmark.py --machine md6x \
     --test_gpu --n_list 2420 5120 9680 20480 50000 \
     --omp_list 1 4 8 --mpi_list 1 4 8 --solvent_density 0.4 \
     --prep_mpi 8 --hwthread
@@ -140,7 +146,7 @@ Ring polymers use `bond_style fene` + `angle_style harmonic`, both ported
 to Kokkos — no extra flags needed beyond the standard GPU command.
 
 ```bash
-python benchmark.py --machine md69 --lmp_bin lmp \
+python benchmark.py --machine md6x \
     --test_gpu --omp_list 1 4 8 --mpi_list 1 4 8 --hwthread
 ```
 
@@ -158,7 +164,7 @@ stage runs automatically (same caching logic as `solvent_benchmark/`).
 Default data file: `input/combined_N35280_poly64000.data`.
 
 ```bash
-python benchmark.py --machine md69 --lmp_bin lmp \
+python benchmark.py --machine md6x \
     --test_gpu --omp_list 1 4 8 --mpi_list 1 4 8 \
     --solvent_density 0.4 --prep_mpi 8 --hwthread
 ```
@@ -171,12 +177,12 @@ LAMMPS (no pre-generated data files) and supports a Kokkos option sweep.
 ```bash
 cd benchmarks/deserno_gpu/planar_benchmark
 
-python new_bench.py --machine md69 --lmp_bin lmp \
+python new_bench.py --machine md6x --lmp_bin lmp \
     --test_gpu --n_list 600 2400 9600 38400 153600 614400 \
     --omp_list 1 4 8 --mpi_list 1 4 8 --hwthread
 
 # Kokkos option sweep (neigh x comm x sort x OMP)
-python kokkos_sweep.py --machine md69 --lmp_bin lmp \
+python kokkos_sweep.py --machine md6x --lmp_bin lmp \
     --n_list 9600 38400 --omp_list 1 4 8 --steps 1000 --hwthread
 python plot_kokkos_sweep.py   # edit CSV filename at top of file
 ```
@@ -195,7 +201,7 @@ Reads `results_{machine}.csv` from each system folder and writes plots to
 
 ```bash
 cd benchmarks
-python plot_bench.py --machine md69
+python plot_bench.py --machine md6x
 ```
 
 ## `compare_bench.py` — compare two runs
@@ -206,12 +212,12 @@ prints the TPS ratio new/old, and writes one bar plot per system to
 
 ```bash
 cd benchmarks
-python compare_bench.py --old md69 --new md69_p13Nov2026
+python compare_bench.py --old md6x_old --new md6x
 ```
 
-`results_md69.csv` is the baseline from the old local `pair_mesomem` build
-(LAMMPS develop `5ea3b58`); `results_md69_p13Nov2026.csv` is upstream
-`mesomem/dipole/kk` on LAMMPS `patch_13Nov2026`, same machine and settings.
+`results_md6x_old.csv` is the baseline from the old local `pair_mesomem` build
+(LAMMPS develop `5ea3b58`, run on md69); `results_md6x.csv` is upstream
+`mesomem/dipole/kk` on LAMMPS `patch_13Nov2026`, same hardware and settings.
 
 ## Running simulations — the canonical GPU command
 

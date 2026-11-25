@@ -8,7 +8,7 @@ plots/compare_{old}_vs_{new}/.
 A ratio > 1 means the new build is faster.
 
 Usage:
-    python compare_bench.py --old md69 --new md69_p13Nov2026
+    python compare_bench.py --old md6x_old --new md6x
 """
 
 import os

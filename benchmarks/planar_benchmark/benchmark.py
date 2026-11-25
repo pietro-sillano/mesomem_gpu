@@ -1,15 +1,15 @@
 """benchmark.py — Planar membrane (dipole_sphere) benchmark.
 
 GPU sweep (no mpirun):
-    python benchmark.py --machine md69 --test_gpu --omp_list 1 4 8 \\
-        --steps_gpu 1000 --lmp_bin lmp --hwthread
+    python benchmark.py --machine md6x --test_gpu --omp_list 1 4 8 \\
+        --steps_gpu 1000 --hwthread
 
 CPU MPI scaling:
-    python benchmark.py --machine md69 --steps_cpu 500 \\
+    python benchmark.py --machine md6x --steps_cpu 500 \\
         --mpi_list 1 4 8 16 --hwthread
 """
 
-import subprocess, os, argparse, time, re, platform
+import subprocess, os, sys, shutil, argparse, time, re, platform
 import numpy as np
 import pandas as pd
 
@@ -109,7 +109,7 @@ def run_gpu(args, n, omp, lmp_input, hw_info):
         return None
     return {"N": n, "Mode": "GPU", "MPI": 1, "OMP": omp, "Neigh": args.neigh,
             **rep, "CPU_Info": cpu_model, "GPU_Name": gpu_info["name"],
-            "GPU_Cap": gpu_info["cap"], "LMP_Binary": os.path.basename(args.lmp_bin),
+            "GPU_Cap": gpu_info["cap"], "LMP_Binary": args.lmp_bin,
             "Machine": args.machine}
 
 
@@ -134,7 +134,7 @@ def run_cpu(args, n, mpi, lmp_input, hw_info):
         return None
     return {"N": n, "Mode": "CPU", "MPI": mpi, "OMP": 1, "Neigh": "none",
             **rep, "CPU_Info": cpu_model, "GPU_Name": gpu_info["name"],
-            "GPU_Cap": gpu_info["cap"], "LMP_Binary": os.path.basename(args.lmp_bin),
+            "GPU_Cap": gpu_info["cap"], "LMP_Binary": args.lmp_bin,
             "Machine": args.machine}
 
 
@@ -147,8 +147,8 @@ def main():
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--machine",   required=True,
                         help="Machine name — used in the CSV filename")
-    # lmp_kokkos is the portable default; with a compile_local.sh build use lmp
-    parser.add_argument("--lmp_bin",   default="lmp_kokkos")
+    parser.add_argument("--lmp_bin",   default="lmp",
+                        help="LAMMPS binary (default: lmp from source env_local.sh)")
     parser.add_argument("--steps_gpu", type=int, default=1000)
     parser.add_argument("--steps_cpu", type=int, default=500)
     parser.add_argument("--omp_list",  type=int, nargs="+", default=[1, 4, 8],
@@ -164,6 +164,13 @@ def main():
     parser.add_argument("--neigh",     default="half")
 
     args = parser.parse_args()
+
+    # resolve the binary to a full path (recorded in the CSV), fail early if missing
+    lmp_path = shutil.which(args.lmp_bin)
+    if lmp_path is None:
+        sys.exit(f"ERROR: {args.lmp_bin} not found, run 'source env_local.sh' first")
+    args.lmp_bin = lmp_path
+    print(f"Using {args.lmp_bin}")
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(script_dir)
@@ -193,6 +200,10 @@ def main():
             row = run_cpu(args, n, mpi, lmp_input, hw_info)
             if row:
                 results.append(row)
+
+    # do not overwrite a previous CSV with an empty one
+    if not results:
+        sys.exit("ERROR: all runs failed, see bench_runs/*/log.lammps (no CSV written)")
 
     df    = pd.DataFrame(results)
     fname = f"results_{args.machine}.csv"

@@ -88,9 +88,14 @@ releases, so it is only guaranteed to compile against the pinned commit.
 ## Repository layout
 
 - `cpp_files/` — custom atom style C++ sources (see table above)
-- `compile_local.sh`, `compile_hpc.sh` — build scripts, see [`BUILDING.md`](BUILDING.md)
+- `compile_local.sh`, `compile_hpc.sh` — build scripts, see [`BUILDING.md`](BUILDING.md).
+  Local builds go to `_build/local_sm<XY>/`, one per GPU type (md6*: `sm89`,
+  md4*: `sm61`); `source env_local.sh` loads the right one on any workstation
 - `benchmarks/` — per-system input scripts, `benchmark.py` sweep drivers, and plots; see [`BENCHMARKS.md`](BENCHMARKS.md)
-- `diagnostics/` — small standalone correctness checks (angle/sphere/dsa atom and pair styles, CPU vs GPU)
+- `diagnostics/` — small standalone correctness checks (angle/sphere/dsa atom and pair styles, CPU vs GPU).
+  `run_mesomem_cpu_gpu.sh` on patch_13Nov2026 (RTX 4090): `mesomem/dipole`
+  vs `mesomem/dipole/kk` per-atom forces agree to 3e-14 and torques to 7e-14
+  (relative to the largest value)
 - `lammps/` — a local, already-patched LAMMPS checkout used for day-to-day
   development on this machine (not tracked in git — see `.gitignore`;
   reproduce it anywhere with `compile_local.sh`)

@@ -3,13 +3,13 @@
 # runs mesomem_cpu_gpu.lmp once per mode and prints the largest per-atom
 # force/torque difference relative to the largest CPU value.
 #
-# Usage (from this folder, after sourcing a build's env.sh):
+# Usage (from this folder, after "source ../env_local.sh"):
 #   ./run_mesomem_cpu_gpu.sh
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 LMP=${LMP:-lmp}
-command -v "$LMP" >/dev/null || { echo "ERROR: $LMP not found, source _build/<build>/env.sh first"; exit 1; }
+command -v "$LMP" >/dev/null || { echo "ERROR: $LMP not found, run 'source env_local.sh' first"; exit 1; }
 GPU_FLAGS="-k on g 1 -sf kk -pk kokkos newton on neigh half comm device"
 
 for mode in cpu gpu; do

@@ -6,7 +6,12 @@
 # from cpp_files/, and builds LAMMPS with KOKKOS (GPU/CUDA), MPI, and the
 # Python API. The GPU architecture is auto-detected.
 #
-# If ./_build/local_<host>/lammps-src already exists at the pinned commit,
+# One build per GPU type: ./_build/local_sm<XY>/, where XY is the GPU compute
+# capability (e.g. local_sm89 for the RTX 4090 workstations md6*, local_sm61
+# for the GTX 1080 Ti workstations md4*). /martini is shared, so all machines
+# with the same GPU reuse the same build. Load it with: source env_local.sh
+#
+# If ./_build/local_sm<XY>/lammps-src already exists at the pinned commit,
 # the LAMMPS fetch is skipped and re-running this script just does an
 # incremental rebuild (custom source files are always re-copied first, so
 # local edits to cpp_files/ are picked up). Pass --force to wipe it and
@@ -14,7 +19,7 @@
 #
 # Usage: ./compile_local.sh [--force]
 #
-# Everything ends up under ./_build/local_<host>/ (source, cmake build dir,
+# Everything ends up under ./_build/local_sm<XY>/ (source, cmake build dir,
 # install, python venv) so nothing outside that folder is touched.
 
 set -euo pipefail
@@ -38,19 +43,9 @@ LAMMPS_GIT_URL="https://github.com/lammps/lammps.git"
 # contain mesomem/dipole.
 LAMMPS_REF="68b557e3a2148ea9b31dda5b55800215fb8be677"
 
-# one build per host: /martini is shared between workstations with
-# different GPUs (e.g. md43: GTX 1080 Ti, md69: RTX 4090)
-BUILD_ROOT="$SCRIPT_DIR/_build/local_$(hostname -s)"
-SRC_DIR="$BUILD_ROOT/lammps-src"
-INSTALL_PREFIX="$BUILD_ROOT/install"
-VENV_DIR="$BUILD_ROOT/venv"
-ENV_FILE="$BUILD_ROOT/env.sh"
 JOBS="$(nproc)"
 
 echo "== MesoMem GPU build (local) =="
-echo "  work dir: $BUILD_ROOT"
-echo "  force:    $FORCE"
-echo
 
 # --------------------------------------------------------------------------
 # Step 0: check prerequisites and detect the GPU architecture
@@ -76,8 +71,18 @@ case "$COMPUTE_CAP" in
   9.0) GPU_ARCH=HOPPER90 ;;
   *) echo "ERROR: unrecognized GPU compute capability '$COMPUTE_CAP', edit compile_local.sh to add it"; exit 1 ;;
 esac
-echo "  GPU:    compute capability $COMPUTE_CAP -> Kokkos_ARCH_$GPU_ARCH"
-echo "  python: $PYTHON_BIN"
+
+# one build per GPU type (see header), shared by all machines with that GPU
+BUILD_ROOT="$SCRIPT_DIR/_build/local_sm${COMPUTE_CAP/./}"
+SRC_DIR="$BUILD_ROOT/lammps-src"
+INSTALL_PREFIX="$BUILD_ROOT/install"
+VENV_DIR="$BUILD_ROOT/venv"
+ENV_FILE="$BUILD_ROOT/env.sh"
+
+echo "  GPU:      compute capability $COMPUTE_CAP -> Kokkos_ARCH_$GPU_ARCH"
+echo "  work dir: $BUILD_ROOT"
+echo "  force:    $FORCE"
+echo "  python:   $PYTHON_BIN"
 
 # nvcc/CUDA is commonly installed outside PATH
 if ! command -v nvcc >/dev/null 2>&1 && [[ -x /usr/local/cuda/bin/nvcc ]]; then

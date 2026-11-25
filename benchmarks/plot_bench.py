@@ -4,8 +4,8 @@ Reads results_{machine}.csv from each system folder, writes plots to
 plots/{machine}/.
 
 Usage:
-    python plot_bench.py --machine md69
-    python plot_bench.py --machine md69 --systems planar solvent
+    python plot_bench.py --machine md6x
+    python plot_bench.py --machine md6x --systems planar solvent
 """
 
 import os
