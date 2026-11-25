@@ -62,9 +62,9 @@ thermo ${t_dump}
 ######## PAIR STYLE ##########
 ##############################
 
-# global cutoff DEBUG
-pair_style      mesomem ${v_rcut}
-# i j sigma eps ktilt ksplay rcut weightflag weight_rc
+# cutoffs are set per type pair in pair_coeff
+pair_style      mesomem/dipole
+# i j sigma eps ktilt ksplay rc wc zeta c0
 pair_coeff      1 1 1.0 1.0 ${v_tilt} ${v_splay} ${v_rcut} ${v_wc} ${v_zeta} 0.0
 
 # dump coords all custom ${t_dump} position.lammpstrj id type xu yu zu ix iy iz vx vy vz mux muy muz omegax omegay omegaz fx fy fz tqx tqy tqz

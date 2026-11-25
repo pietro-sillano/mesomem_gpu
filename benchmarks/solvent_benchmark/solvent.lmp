@@ -38,8 +38,8 @@ compute T_wat water    temp
 thermo_style custom step spcpu temp pe press
 thermo ${t_dump}
 
-pair_style hybrid mesomem ${v_rcut} lj/cut 1.12
-pair_coeff 1 1 mesomem 1.0 1.0 ${v_tilt} ${v_splay} ${v_rcut} ${v_wc} ${v_zeta} 0.0
+pair_style hybrid mesomem/dipole lj/cut 1.12
+pair_coeff 1 1 mesomem/dipole 1.0 1.0 ${v_tilt} ${v_splay} ${v_rcut} ${v_wc} ${v_zeta} 0.0
 pair_coeff 2 2 lj/cut 1.0 1.0 1.12
 pair_coeff 1 2 lj/cut 1.0 1.0 1.12
 

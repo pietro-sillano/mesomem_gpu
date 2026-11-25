@@ -2,7 +2,7 @@
 
 GPU sweep (no mpirun):
     python benchmark.py --machine md69 --test_gpu --omp_list 1 4 8 \\
-        --steps_gpu 1000 --lmp_bin lmp_kokkos_89_dev --hwthread
+        --steps_gpu 1000 --lmp_bin lmp --hwthread
 
 CPU MPI scaling:
     python benchmark.py --machine md69 --steps_cpu 500 \\

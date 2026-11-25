@@ -1,7 +1,9 @@
 # Building
 
-Two standalone scripts — each builds LAMMPS with Kokkos/CUDA, MPI, and the
-Python API against the custom MesoMem sources in [`cpp_files/`](cpp_files/).
+Two standalone scripts — each builds LAMMPS (pinned to the
+`patch_13Nov2026` release, which includes `pair_style mesomem/dipole` and
+its KOKKOS port) with Kokkos/CUDA, MPI, and the Python API, plus the custom
+atom style in [`cpp_files/`](cpp_files/).
 See [`README.md`](README.md) for what those sources are and why a pinned
 LAMMPS commit is required.
 
@@ -19,9 +21,10 @@ LAMMPS commit is required.
 `AMPERE80` for Snellius A100 nodes) set as plain variables near the top of
 the file — edit them if you're building on a different cluster.
 
-If `_build/<local|hpc>/lammps-src` already exists from a previous run,
-re-running either script skips the LAMMPS fetch and just does an
-incremental rebuild (the custom `cpp_files/` sources are always re-copied
+If `_build/<local_HOST|hpc>/lammps-src` already exists from a previous run
+*at the pinned commit*, re-running either script skips the LAMMPS fetch and
+just does an incremental rebuild (changing the pinned SHA in the script
+triggers a fresh fetch automatically) (the custom `cpp_files/` sources are always re-copied
 first, so local edits are picked up). Pass `--force` to wipe it and fetch
 + build from scratch:
 
@@ -36,32 +39,34 @@ first, so local edits are picked up). Pass `--force` to wipe it and fetch
    Kokkos GPU architecture (auto-detected locally via `nvidia-smi`,
    hardcoded for HPC).
 2. Fetches the pinned LAMMPS commit with a shallow `git fetch`.
-3. Copies the custom MesoMem source files from `cpp_files/` into the right
-   package subfolders (`src/`, `src/DIPOLE/`, `src/KOKKOS/`).
+3. Copies the custom atom style files from `cpp_files/` into the right
+   package subfolders (`src/DIPOLE/`, `src/KOKKOS/`).
 4. Configures with CMake (`PKG_KOKKOS` + CUDA, `PKG_DIPOLE`,
    `PKG_MOLECULE`, `PKG_EXTRA-PAIR`, `PKG_PYTHON`, MPI, shared libs) and
    builds + installs.
 5. Creates a Python virtualenv and installs the LAMMPS Python bindings
    into it via `python/install.py`.
 6. Runs a smoke test that loads `atom_style dipole_sphere_angle` and
-   `pair_style mesomem` through the Python API and prints
+   `pair_style mesomem/dipole` through the Python API and prints
    `OK: ...` on success.
 
 ## Output layout
 
-Each script is self-contained under `_build/local/` or `_build/hpc/`
-(gitignored — nothing outside that folder is touched):
+Each script is self-contained under `_build/local_<host>/` (e.g.
+`_build/local_md69/`; one per workstation, since `/martini` is shared
+between machines with different GPUs) or `_build/hpc/` (gitignored —
+nothing outside that folder is touched):
 
-- `_build/<local|hpc>/lammps-src/` — fetched LAMMPS source (+ MesoMem files copied in)
-- `_build/<local|hpc>/install/` — installed `lmp` binary + `liblammps.so`
-- `_build/<local|hpc>/venv/` — Python virtualenv with the `lammps` Python module installed
-- `_build/<local|hpc>/env.sh` — source this to put `lmp` and `liblammps.so` on your PATH/LD_LIBRARY_PATH
+- `_build/<build>/lammps-src/` — fetched LAMMPS source (+ atom style files copied in)
+- `_build/<build>/install/` — installed `lmp` binary + `liblammps.so`
+- `_build/<build>/venv/` — Python virtualenv with the `lammps` Python module installed
+- `_build/<build>/env.sh` — source this to put `lmp` and `liblammps.so` on your PATH/LD_LIBRARY_PATH
 
 ## Using a finished build
 
 ```bash
-source _build/local/env.sh
-source _build/local/venv/bin/activate
+source _build/local_$(hostname -s)/env.sh
+source _build/local_$(hostname -s)/venv/bin/activate
 lmp -k on g 1 -sf kk -pk kokkos newton on neigh half comm device -in your_script.lmp
 ```
 
@@ -71,7 +76,7 @@ or from Python:
 from lammps import lammps
 lmp = lammps()
 lmp.command('atom_style dipole_sphere_angle')
-lmp.command('pair_style mesomem 2.5')
+lmp.command('pair_style mesomem/dipole')
 ```
 
 See [`BENCHMARKS.md`](BENCHMARKS.md) for the canonical GPU run command and

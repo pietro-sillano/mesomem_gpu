@@ -36,8 +36,8 @@ set type 2 density ${wat_density}
 set type 2 dipole 0.0 0.0 1.0
 
 # pair style for minimization (matches solvent.lmp)
-pair_style hybrid mesomem 2.5 lj/cut 1.12
-pair_coeff 1 1 mesomem 1.0 1.0 15.0 1.0 2.5 2.0 5 0.0
+pair_style hybrid mesomem/dipole lj/cut 1.12
+pair_coeff 1 1 mesomem/dipole 1.0 1.0 15.0 1.0 2.5 2.0 5 0.0
 pair_coeff 2 2 lj/cut 1.0 1.0 1.12
 pair_coeff 1 2 lj/cut 1.0 1.0 1.12
 

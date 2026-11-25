@@ -37,7 +37,11 @@ python plot_bench.py --machine md69
 
 `--lmp_bin` should point at (or resolve via PATH to) the `lmp` binary
 produced by `compile_local.sh`/`compile_hpc.sh` — `source
-_build/local/env.sh` first.
+_build/local_$(hostname -s)/env.sh` first.
+
+All MesoMem inputs use the upstream pair style `pair_style mesomem/dipole`
+(`pair_style hybrid mesomem/dipole lj/cut ...` with solvent/polymer); with
+`-sf kk` it maps to `mesomem/dipole/kk`.
 
 ## `benchmark.py` — common interface
 
@@ -193,6 +197,21 @@ Reads `results_{machine}.csv` from each system folder and writes plots to
 cd benchmarks
 python plot_bench.py --machine md69
 ```
+
+## `compare_bench.py` — compare two runs
+
+Matches `results_{old}.csv` and `results_{new}.csv` on (Mode, N, MPI, OMP),
+prints the TPS ratio new/old, and writes one bar plot per system to
+`benchmarks/plots/compare_{old}_vs_{new}/`.
+
+```bash
+cd benchmarks
+python compare_bench.py --old md69 --new md69_p13Nov2026
+```
+
+`results_md69.csv` is the baseline from the old local `pair_mesomem` build
+(LAMMPS develop `5ea3b58`); `results_md69_p13Nov2026.csv` is upstream
+`mesomem/dipole/kk` on LAMMPS `patch_13Nov2026`, same machine and settings.
 
 ## Running simulations — the canonical GPU command
 

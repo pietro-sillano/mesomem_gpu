@@ -50,8 +50,8 @@ thermo_style custom step spcpu cpuremain temp pe
 thermo ${t_dump}
 
 # ---- Pair potentials ----
-pair_style hybrid mesomem ${v_rcut} lj/cut 1.12246152962189
-pair_coeff 1 1 mesomem 1.0 1.0 ${v_tilt} ${v_splay} ${v_rcut} ${v_wc} ${v_zeta} 0.0
+pair_style hybrid mesomem/dipole lj/cut 1.12246152962189
+pair_coeff 1 1 mesomem/dipole 1.0 1.0 ${v_tilt} ${v_splay} ${v_rcut} ${v_wc} ${v_zeta} 0.0
 pair_coeff 2 2 lj/cut 1.0 1.0 1.12246152962189
 pair_coeff 3 3 lj/cut 1.0 1.0 1.12246152962189
 pair_coeff 1 2 lj/cut 1.0 1.0 1.12246152962189

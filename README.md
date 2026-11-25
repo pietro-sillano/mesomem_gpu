@@ -10,22 +10,38 @@ solvent systems.
 
 ## What MesoMem adds to LAMMPS
 
-The membrane model needs one custom atom style and one custom pair style,
-each with a CPU and a GPU (Kokkos) implementation. All of their source
-lives in [`cpp_files/`](cpp_files/) — this is the folder that matters if
-you're modifying the physics or porting it to a new LAMMPS version:
+The membrane model needs a pair style and a custom atom style, each with
+a CPU and a GPU (Kokkos) implementation.
+
+**Pair style — upstream.** The MesoMem potential is part of upstream
+LAMMPS as `pair_style mesomem/dipole` (DIPOLE package), with official
+KOKKOS (`mesomem/dipole/kk`) and OPENMP (`mesomem/dipole/omp`) variants,
+starting with the `patch_13Nov2026` release (docs:
+`doc/src/pair_mesomem_dipole.rst`). This repo no longer carries its own
+copy. Syntax (no global cutoff; one cutoff per type pair):
+
+```
+pair_style mesomem/dipole
+pair_coeff 1 1 sigma eps k_tilt k_splay r_c w_c zeta c0
+```
+
+The old local `pair_mesomem` (removed, see tag `pre-mesomem-dipole`) had
+the opposite sign of the splay torque, rounded zeta to an integer on the
+GPU, and had no guard for zero dipoles; upstream fixes all three.
+
+**Atom style — custom.** Its source lives in [`cpp_files/`](cpp_files/):
 
 | File(s) | What it is | LAMMPS package/location |
 |---|---|---|
-| `pair_mesomem.{cpp,h}` | CPU reference pair style (`pair_style mesomem`) | `src/` (core) |
-| `pair_mesomem_kokkos.{cpp,h}` | GPU pair style (`pair_style mesomem/kk`) | `src/KOKKOS/` |
 | `atom_vec_dipole_sphere_angle.{cpp,h}` | CPU atom style (`atom_style dipole_sphere_angle`) — merges charge, dipole, sphere radius/mass, bonds, angles into one contiguous layout | `src/DIPOLE/` |
 | `atom_vec_dipole_sphere_angle_kokkos.{cpp,h}` | GPU atom style (`atom_style dipole_sphere_angle/kk`) | `src/KOKKOS/` |
-| `fix_langevin_kokkos.cpp` | Patched Kokkos Langevin thermostat (overwrites the stock LAMMPS file) | `src/KOKKOS/` |
+
+The Kokkos Langevin `omega yes` fix that used to be patched in here
+(`omega_thermostat_kokkos()`) is also upstream now.
 
 `compile_local.sh`/`compile_hpc.sh` (see [`BUILDING.md`](BUILDING.md))
-fetch a vanilla LAMMPS source tree and copy these files into the package
-subfolders above, following LAMMPS's own layout convention so CMake's
+fetch a vanilla LAMMPS source tree and copy the atom style files into the
+package subfolders above, following LAMMPS's own layout convention so CMake's
 per-package glob picks them up automatically.
 
 ### Why a custom atom style
@@ -62,18 +78,16 @@ API), plus MPI.
 ### Why a pinned LAMMPS commit, not `lammps-stable`
 
 This repo does **not** ship a full LAMMPS source tree — the build scripts
-fetch a pinned upstream LAMMPS commit (git SHA hardcoded in the scripts)
-instead of the `lammps-stable` release. The Kokkos atom-style API
-(`AtomVecKokkos::sync`/`modified`/`sync_pinned`) changed after the last
-stable LAMMPS release, so building `atom_vec_dipole_sphere_angle_kokkos`
-against `lammps-stable.tar.gz` fails to compile. The scripts `git fetch
---depth 1` a specific known-good `develop`-branch commit instead, so the
-checked-in content stays small while always building against the exact
-LAMMPS version this KOKKOS code was written for.
+`git fetch --depth 1` a pinned upstream LAMMPS commit (SHA hardcoded in
+the scripts): the **`patch_13Nov2026`** feature release
+(`68b557e3a2`). It is the first release containing `mesomem/dipole` and
+its KOKKOS port; `stable_30Sep2026` does not have it. The custom KOKKOS
+atom style also tracks the `AtomVecKokkos` API, which changes between
+releases, so it is only guaranteed to compile against the pinned commit.
 
 ## Repository layout
 
-- `cpp_files/` — custom MesoMem C++ sources (see table above)
+- `cpp_files/` — custom atom style C++ sources (see table above)
 - `compile_local.sh`, `compile_hpc.sh` — build scripts, see [`BUILDING.md`](BUILDING.md)
 - `benchmarks/` — per-system input scripts, `benchmark.py` sweep drivers, and plots; see [`BENCHMARKS.md`](BENCHMARKS.md)
 - `diagnostics/` — small standalone correctness checks (angle/sphere/dsa atom and pair styles, CPU vs GPU)

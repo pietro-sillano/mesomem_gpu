@@ -1,0 +1,28 @@
+# Diagnostic: per-atom forces/torques of pair_style mesomem/dipole on CPU vs
+# GPU (mesomem/dipole/kk). Planar N=2500 lattice with random displacements
+# and random dipole orientations, so that tilt, splay and the radial terms
+# are all non-zero. Run once without and once with "-sf kk" (see
+# run_mesomem_cpu_gpu.sh) and compare the two dumps.
+
+units           lj
+atom_style      dipole_sphere_angle
+dimension       3
+boundary        p p p
+processors      * * 1
+neighbor        1.0 bin
+
+read_data ../../benchmarks/planar_benchmark/input/lattice_d_0.85_N_2500_ds
+set type 1 diameter 4.0
+set type 1 density 1.0
+
+displace_atoms all random 0.1 0.1 0.1 4242 units box
+set group all dipole/random 9876 1.0
+
+pair_style      mesomem/dipole
+pair_coeff      1 1 1.0 1.0 15.0 1.0 2.5 2.0 5 0.1
+
+thermo_style    custom step pe press pxx pyy pzz pxy
+thermo_modify   format float %20.12g
+dump            d all custom 1 forces.dump id fx fy fz tqx tqy tqz
+dump_modify     d sort id format float %20.12g
+run 0

@@ -2,7 +2,7 @@
 
 GPU sweep (no mpirun):
     python benchmark.py --machine md69 --test_gpu --omp_list 1 4 8 \\
-        --steps_gpu 1000 --lmp_bin lmp_kokkos_89_dev --hwthread
+        --steps_gpu 1000 --lmp_bin lmp --hwthread
 
 CPU MPI scaling:
     python benchmark.py --machine md69 --steps_cpu 500 \\
@@ -147,7 +147,7 @@ def main():
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--machine",   required=True,
                         help="Machine name — used in the CSV filename")
-    # lmp_kokkos is the portable default; locally use lmp_kokkos_89_dev
+    # lmp_kokkos is the portable default; with a compile_local.sh build use lmp
     parser.add_argument("--lmp_bin",   default="lmp_kokkos")
     parser.add_argument("--steps_gpu", type=int, default=1000)
     parser.add_argument("--steps_cpu", type=int, default=500)
