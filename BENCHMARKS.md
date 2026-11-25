@@ -253,17 +253,20 @@ md67, i9-14900K + RTX 4090, same settings as the May baseline
 | | new / old TPS |
 |---|---|
 | GPU, planar + solvent, all N | 1.10 – 1.13 |
+| GPU, polymer / polymer_solvent | 1.07 / 1.14 |
 | CPU, planar | 1.24 – 1.57 |
 | CPU, solvent | 1.06 – 1.41 |
-| CPU, polymer, polymer_solvent | 1.14 – 1.19 |
+| CPU, polymer, polymer_solvent | 1.11 – 1.17 |
 
 `ab_old_new.sh` on the same idle GPU (planar N=2500): old 2019 / 2080,
 new 2293 / 2323 timesteps/s. Largest systems on the GPU: planar N=102400
-511 TPS, solvent N=269380 671 TPS.
+511 TPS, solvent N=269380 671 TPS, polymer N=99280 795 TPS, polymer_solvent
+N=229345 799 TPS.
 
-This sweep used a build without the Kokkos OpenMP backend, so the GPU runs
-with OMP 4/8 failed: there are GPU rows only for OMP 1, and none for polymer
-and polymer_solvent (which use OMP 4 only).
+planar and solvent were run with a build without the Kokkos OpenMP backend,
+so they have GPU rows for OMP 1 only (OMP 4/8 make no difference on the GPU,
+see md4x). polymer and polymer_solvent were rerun with the OpenMP-enabled
+build.
 
 ### md4x results (patch_13Nov2026, Nov 2026)
 

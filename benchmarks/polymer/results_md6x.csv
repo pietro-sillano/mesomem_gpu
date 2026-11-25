@@ -1,5 +1,6 @@
 N,Mode,MPI,OMP,Neigh,TPS_mean,TPS_std,Wall_mean,Wall_std,CPU_Info,GPU_Name,GPU_Cap,LMP_Binary,Machine
-99280,CPU,1,1,none,29.656666666666666,0.05316849526636008,18.421583731969196,0.34593860659080167,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,/martini/pietro/mesomem_gpu/_build/local_sm89/install/bin/lmp,md6x
-99280,CPU,4,1,none,74.46366666666667,0.3284563221427698,8.129985729853312,0.03893124189969132,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,/martini/pietro/mesomem_gpu/_build/local_sm89/install/bin/lmp,md6x
-99280,CPU,8,1,none,138.044,2.69507340654511,5.130743106206258,0.116610466671412,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,/martini/pietro/mesomem_gpu/_build/local_sm89/install/bin/lmp,md6x
-99280,CPU,16,1,none,193.89266666666666,0.4760877603505025,4.134714047114055,0.03913043045874093,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,/martini/pietro/mesomem_gpu/_build/local_sm89/install/bin/lmp,md6x
+99280,GPU,1,4,half,795.237,1.1823510477011479,8.095947901407877,0.03100651005974816,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,/martini/pietro/mesomem_gpu/_build/local_sm89/install/bin/lmp,md6x
+99280,CPU,1,1,none,29.92866666666667,0.06981085557100535,17.99100931485494,0.04574597119323402,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,/martini/pietro/mesomem_gpu/_build/local_sm89/install/bin/lmp,md6x
+99280,CPU,4,1,none,74.94666666666667,0.19511762833964272,8.078614632288614,0.020096856285403027,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,/martini/pietro/mesomem_gpu/_build/local_sm89/install/bin/lmp,md6x
+99280,CPU,8,1,none,140.04533333333333,2.37445086049151,5.0165064334869385,0.05793194958372626,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,/martini/pietro/mesomem_gpu/_build/local_sm89/install/bin/lmp,md6x
+99280,CPU,16,1,none,181.61266666666666,2.972318324510718,4.315638621648152,0.019987695543294225,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,/martini/pietro/mesomem_gpu/_build/local_sm89/install/bin/lmp,md6x

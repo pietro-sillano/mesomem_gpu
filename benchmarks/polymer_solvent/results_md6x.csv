@@ -1,2 +1,3 @@
 N,Mode,MPI,OMP,Neigh,TPS_mean,TPS_std,Wall_mean,Wall_std,CPU_Info,GPU_Name,GPU_Cap,LMP_Binary,Machine
-229345,CPU,16,1,none,152.17,0.2765658450833488,5.580950498580933,0.5658111932048828,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,/martini/pietro/mesomem_gpu/_build/local_sm89/install/bin/lmp,md6x
+229345,GPU,1,4,half,798.5493333333334,2.2878727140196595,8.160265843073526,0.009495995860787594,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,/martini/pietro/mesomem_gpu/_build/local_sm89/install/bin/lmp,md6x
+229345,CPU,16,1,none,154.17133333333334,1.8263946877812511,5.0673941771189375,0.07252081823564945,Intel(R) Core(TM) i9-14900K,NVIDIA GeForce RTX 4090,8.9,/martini/pietro/mesomem_gpu/_build/local_sm89/install/bin/lmp,md6x
