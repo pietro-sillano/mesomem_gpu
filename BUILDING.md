@@ -41,7 +41,8 @@ first, so local edits are picked up). Pass `--force` to wipe it and fetch
 2. Fetches the pinned LAMMPS commit with a shallow `git fetch`.
 3. Copies the custom atom style files from `cpp_files/` into the right
    package subfolders (`src/DIPOLE/`, `src/KOKKOS/`).
-4. Configures with CMake (`PKG_KOKKOS` + CUDA, `PKG_DIPOLE`,
+4. Configures with CMake (`PKG_KOKKOS` with the CUDA + OpenMP backends, so
+   `-k on g 1 t N` works with N > 1, `PKG_DIPOLE`,
    `PKG_MOLECULE`, `PKG_EXTRA-PAIR`, `PKG_PYTHON`, MPI, shared libs) and
    builds + installs.
 5. Creates a Python virtualenv and installs the LAMMPS Python bindings

@@ -135,6 +135,7 @@ cmake \
   -D PKG_EXTRA-PAIR=yes \
   -D PKG_KOKKOS=yes \
   -D Kokkos_ENABLE_CUDA=yes \
+  -D Kokkos_ENABLE_OPENMP=yes \
   -D "Kokkos_ARCH_${GPU_ARCH}=yes" \
   -D Kokkos_ENABLE_CUDA_UVM=OFF \
   -D CMAKE_CXX_COMPILER="$SRC_DIR/lib/kokkos/bin/nvcc_wrapper" \

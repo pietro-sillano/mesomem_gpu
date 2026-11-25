@@ -215,9 +215,21 @@ cd benchmarks
 python compare_bench.py --old md6x_old --new md6x
 ```
 
-`results_md6x_old.csv` is the baseline from the old local `pair_mesomem` build
-(LAMMPS develop `5ea3b58`, run on md69); `results_md6x.csv` is upstream
-`mesomem/dipole/kk` on LAMMPS `patch_13Nov2026`, same hardware and settings.
+`results_md6x_old.csv` is the baseline (May 2026, md69): binary
+`~/.local/bin/lmp_kokkos_89_dev` (LAMMPS develop `5ea3b58`, Kokkos CUDA +
+OpenMP), with the old local pair style under its earlier name
+`membrane_sillanov2` (later renamed `mesomem`); otherwise the same
+`planar.lmp`. `results_md6x.csv` is upstream `mesomem/dipole/kk` on LAMMPS
+`patch_13Nov2026`, same hardware and settings.
+
+The GPU runs are short and latency-bound (time per step barely depends on N),
+so another job on the same GPU slows them down several times. Before a full
+sweep, check old vs new back to back on the same GPU state:
+
+```bash
+cd benchmarks/planar_benchmark
+./ab_old_new.sh                  # N=2500, 2000 steps, 2 reps each
+```
 
 ## Running simulations — the canonical GPU command
 
